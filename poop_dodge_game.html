@@ -78,7 +78,7 @@
     <div id="gameContainer">
         <h1>Poop Dodge Game 💩</h1>
         <div style="position: relative;">
-            <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <canvas id="gameCanvas" width="400" height="450"></canvas>
             <div id="gameOver">
                 <h2>게임 오버!</h2>
                 <p>최종 점수: <span id="finalScore"></span></p>
@@ -130,15 +130,43 @@
         });
 
         function drawPlayer() {
-            ctx.fillStyle = '#4CAF50';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            
-            // 간단한 사람 모양
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
             ctx.fillStyle = '#FFE4B5';
-            ctx.fillRect(player.x + 8, player.y - 10, 14, 14); // 머리
+            
+            const centerX = player.x + player.width / 2;
+            const centerY = player.y + player.height / 2;
+            
+            // 머리 (원)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 10, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 몸통 (세로선)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - 2);
+            ctx.lineTo(centerX, centerY + 15);
+            ctx.stroke();
+            
+            // 팔 (가로선)
+            ctx.beginPath();
+            ctx.moveTo(centerX - 10, centerY + 3);
+            ctx.lineTo(centerX + 10, centerY + 3);
+            ctx.stroke();
+            
+            // 다리 (사선)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY + 15);
+            ctx.lineTo(centerX - 8, centerY + 25);
+            ctx.moveTo(centerX, centerY + 15);
+            ctx.lineTo(centerX + 8, centerY + 25);
+            ctx.stroke();
+            
+            // 눈
             ctx.fillStyle = '#000';
-            ctx.fillRect(player.x + 10, player.y - 8, 2, 2); // 왼쪽 눈
-            ctx.fillRect(player.x + 18, player.y - 8, 2, 2); // 오른쪽 눈
+            ctx.fillRect(centerX - 3, centerY - 12, 1, 1);
+            ctx.fillRect(centerX + 2, centerY - 12, 1, 1);
         }
 
         function drawPoop(poop) {
