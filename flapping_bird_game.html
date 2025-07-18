@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flapping Bird</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+        }
+        
+        #instructions {
+            background: #333;
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        .game-over h2 {
+            margin-top: 0;
+            color: #ff6b6b;
+        }
+        
+        .game-over button {
+            background: #4ecdc4;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .game-over button:hover {
+            background: #45b7aa;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="instructions">
+            스페이스바를 눌러 새를 날게 하세요! | 점수: <span id="score">0</span>
+        </div>
+        <div class="game-over" id="gameOver">
+            <h2>게임 오버!</h2>
+            <p>최종 점수: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">다시 시작</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverDiv = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+
+        // 게임 상태
+        let gameState = 'playing'; // 'playing', 'gameOver'
+        let score = 0;
+        let animationId;
+
+        // 새 객체
+        const bird = {
+            x: 100,
+            y: canvas.height / 2,
+            width: 30,
+            height: 25,
+            velocity: 0,
+            gravity: 0.15,
+            jumpStrength: -4.5,
+            color: '#FFD700'
+        };
+
+        // 장애물 배열
+        let obstacles = [];
+        const obstacleWidth = 60;
+        const obstacleGap = 150;
+        const obstacleSpeed = 1;
+
+        // 장애물 생성 함수
+        function createObstacle() {
+            const minHeight = 50;
+            const maxHeight = canvas.height - obstacleGap - 50;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            obstacles.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: topHeight + obstacleGap,
+                bottomHeight: canvas.height - topHeight - obstacleGap,
+                passed: false
+            });
+        }
+
+        // 새 그리기 함수
+        function drawBird() {
+            ctx.save();
+            
+            // 새의 회전 각도 계산 (속도에 따라)
+            const rotation = Math.min(Math.max(bird.velocity * 0.1, -0.5), 0.5);
+            
+            ctx.translate(bird.x + bird.width/2, bird.y + bird.height/2);
+            ctx.rotate(rotation);
+            
+            // 새 몸체
+            ctx.fillStyle = bird.color;
+            ctx.fillRect(-bird.width/2, -bird.height/2, bird.width, bird.height);
+            
+            // 새 부리
+            ctx.fillStyle = '#FF8C00';
+            ctx.fillRect(bird.width/2 - 5, -3, 8, 6);
+            
+            // 새 눈
+            ctx.fillStyle = 'white';
+            ctx.fillRect(-bird.width/2 + 8, -bird.height/2 + 5, 8, 8);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(-bird.width/2 + 10, -bird.height/2 + 7, 4, 4);
+            
+            ctx.restore();
+        }
+
+        // 장애물 그리기 함수
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                // 위쪽 장애물
+                const gradient1 = ctx.createLinearGradient(0, 0, 0, obstacle.topHeight);
+                gradient1.addColorStop(0, '#228B22');
+                gradient1.addColorStop(1, '#32CD32');
+                ctx.fillStyle = gradient1;
+                ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
+                
+                // 아래쪽 장애물
+                const gradient2 = ctx.createLinearGradient(0, obstacle.bottomY, 0, canvas.height);
+                gradient2.addColorStop(0, '#32CD32');
+                gradient2.addColorStop(1, '#228B22');
+                ctx.fillStyle = gradient2;
+                ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
+                
+                // 장애물 테두리
+                ctx.strokeStyle = '#006400';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
+                ctx.strokeRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
+            });
+        }
+
+        // 충돌 감지 함수
+        function checkCollisions() {
+            // 바닥이나 천장 충돌
+            if (bird.y + bird.height >= canvas.height || bird.y <= 0) {
+                return true;
+            }
+            
+            // 장애물 충돌
+            for (let obstacle of obstacles) {
+                if (bird.x < obstacle.x + obstacleWidth &&
+                    bird.x + bird.width > obstacle.x) {
+                    if (bird.y < obstacle.topHeight || 
+                        bird.y + bird.height > obstacle.bottomY) {
+                        return true;
+                    }
+                }
+                
+                // 점수 계산
+                if (!obstacle.passed && bird.x > obstacle.x + obstacleWidth) {
+                    obstacle.passed = true;
+                    score++;
+                    scoreElement.textContent = score;
+                }
+            }
+            
+            return false;
+        }
+
+        // 게임 업데이트 함수
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            // 새 물리 업데이트
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+            
+            // 장애물 업데이트
+            obstacles.forEach((obstacle, index) => {
+                obstacle.x -= obstacleSpeed;
+                
+                // 화면을 벗어난 장애물 제거
+                if (obstacle.x + obstacleWidth < 0) {
+                    obstacles.splice(index, 1);
+                }
+            });
+            
+            // 새 장애물 생성
+            if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < canvas.width - 200) {
+                createObstacle();
+            }
+            
+            // 충돌 감지
+            if (checkCollisions()) {
+                gameOver();
+            }
+        }
+
+        // 게임 렌더링 함수
+        function render() {
+            // 캔버스 클리어
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 배경 구름 그리기
+            drawClouds();
+            
+            // 장애물 그리기
+            drawObstacles();
+            
+            // 새 그리기
+            drawBird();
+        }
+
+        // 구름 그리기 함수
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            
+            // 구름 1
+            ctx.beginPath();
+            ctx.arc(80, 100, 25, 0, Math.PI * 2);
+            ctx.arc(110, 100, 35, 0, Math.PI * 2);
+            ctx.arc(140, 100, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 구름 2
+            ctx.beginPath();
+            ctx.arc(280, 200, 20, 0, Math.PI * 2);
+            ctx.arc(300, 200, 30, 0, Math.PI * 2);
+            ctx.arc(320, 200, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 구름 3
+            ctx.beginPath();
+            ctx.arc(150, 450, 25, 0, Math.PI * 2);
+            ctx.arc(180, 450, 35, 0, Math.PI * 2);
+            ctx.arc(210, 450, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 게임 루프
+        function gameLoop() {
+            update();
+            render();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // 게임 오버 함수
+        function gameOver() {
+            gameState = 'gameOver';
+            finalScoreElement.textContent = score;
+            gameOverDiv.style.display = 'block';
+            cancelAnimationFrame(animationId);
+        }
+
+        // 게임 재시작 함수
+        function restartGame() {
+            gameState = 'playing';
+            score = 0;
+            scoreElement.textContent = score;
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            obstacles = [];
+            gameOverDiv.style.display = 'none';
+            gameLoop();
+        }
+
+        // 키보드 이벤트 리스너
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                if (gameState === 'playing') {
+                    bird.velocity = bird.jumpStrength;
+                }
+            }
+        });
+
+        // 게임 시작
+        createObstacle();
+        gameLoop();
+    </script>
+</body>
+</html>
