@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>똥피하기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #gameContainer {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        #gameCanvas {
+            border: 3px solid #333;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+            cursor: none;
+        }
+        
+        #gameInfo {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        #startButton, #restartButton {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        #startButton:hover, #restartButton:hover {
+            background: #45a049;
+        }
+        
+        #instructions {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1>Poop Dodge Game 💩</h1>
+        <div style="position: relative;">
+            <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <div id="gameOver">
+                <h2>게임 오버!</h2>
+                <p>최종 점수: <span id="finalScore"></span></p>
+                <button id="restartButton">다시 시작</button>
+            </div>
+        </div>
+        <div id="gameInfo">
+            <div>점수: <span id="score">0</span></div>
+            <div>생명: <span id="lives">3</span></div>
+        </div>
+        <button id="startButton">게임 시작</button>
+        <div id="instructions">
+            ← → 방향키로 움직이기<br>
+            똥을 피해서 최대한 오래 버티세요!
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const gameOverDiv = document.getElementById('gameOver');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const finalScoreElement = document.getElementById('finalScore');
+
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let player = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 50,
+            width: 30,
+            height: 30,
+            speed: 5
+        };
+        let poops = [];
+        let gameSpeed = 1;
+        let spawnRate = 0.02;
+
+        // 키보드 입력 처리
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        function drawPlayer() {
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // 간단한 사람 모양
+            ctx.fillStyle = '#FFE4B5';
+            ctx.fillRect(player.x + 8, player.y - 10, 14, 14); // 머리
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 10, player.y - 8, 2, 2); // 왼쪽 눈
+            ctx.fillRect(player.x + 18, player.y - 8, 2, 2); // 오른쪽 눈
+        }
+
+        function drawPoop(poop) {
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.arc(poop.x + poop.width/2, poop.y + poop.height/2, poop.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 똥 모양 디테일
+            ctx.fillStyle = '#654321';
+            ctx.beginPath();
+            ctx.arc(poop.x + poop.width/2, poop.y + poop.height/3, poop.width/4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function spawnPoop() {
+            if (Math.random() < spawnRate) {
+                poops.push({
+                    x: Math.random() * (canvas.width - 20),
+                    y: -20,
+                    width: 20,
+                    height: 20,
+                    speed: 2 + Math.random() * 2
+                });
+            }
+        }
+
+        function updatePlayer() {
+            if (keys['ArrowLeft']) {
+                player.x -= player.speed;
+                // 왼쪽 끝을 넘어가면 오른쪽에서 나타남
+                if (player.x < -player.width) {
+                    player.x = canvas.width;
+                }
+            }
+            if (keys['ArrowRight']) {
+                player.x += player.speed;
+                // 오른쪽 끝을 넘어가면 왼쪽에서 나타남
+                if (player.x > canvas.width) {
+                    player.x = -player.width;
+                }
+            }
+        }
+
+        function updatePoops() {
+            for (let i = poops.length - 1; i >= 0; i--) {
+                poops[i].y += poops[i].speed * gameSpeed;
+                
+                // 화면을 벗어난 똥 제거 및 점수 증가
+                if (poops[i].y > canvas.height) {
+                    poops.splice(i, 1);
+                    score += 10;
+                    scoreElement.textContent = score;
+                }
+            }
+        }
+
+        function checkCollisions() {
+            for (let i = poops.length - 1; i >= 0; i--) {
+                const poop = poops[i];
+                if (player.x < poop.x + poop.width &&
+                    player.x + player.width > poop.x &&
+                    player.y < poop.y + poop.height &&
+                    player.y + player.height > poop.y) {
+                    
+                    // 충돌 시 생명 감소
+                    lives--;
+                    livesElement.textContent = lives;
+                    poops.splice(i, 1);
+                    
+                    // 화면 깜빡임 효과
+                    canvas.style.filter = 'brightness(0.5)';
+                    setTimeout(() => {
+                        canvas.style.filter = 'brightness(1)';
+                    }, 100);
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+
+        function increaseDifficulty() {
+            // 매우 매우 천천히 난이도 증가
+            gameSpeed = 1 + (score / 8000);
+            spawnRate = 0.02 + (score / 20000);
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // 화면 클리어
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 게임 로직 업데이트
+            updatePlayer();
+            spawnPoop();
+            updatePoops();
+            checkCollisions();
+            increaseDifficulty();
+
+            // 그리기
+            drawPlayer();
+            poops.forEach(drawPoop);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            lives = 3;
+            gameSpeed = 1;
+            spawnRate = 0.02;
+            poops = [];
+            player.x = canvas.width / 2 - 15;
+            
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            startButton.style.display = 'none';
+            gameOverDiv.style.display = 'none';
+            
+            gameLoop();
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            gameOverDiv.style.display = 'block';
+        }
+
+        function restartGame() {
+            gameOverDiv.style.display = 'none';
+            startButton.style.display = 'inline-block';
+        }
+
+        // 이벤트 리스너
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+
+        // 게임 캔버스에 포커스
+        canvas.addEventListener('click', () => {
+            canvas.focus();
+        });
+        
+        // 초기 화면 그리기
+        drawPlayer();
+    </script>
+</body>
+</html>
