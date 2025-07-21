@@ -3,30 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Game Collection</title>
+    <title>Simple Games</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #faf7f2 0%, #fcf4e8 50%, #faf7f2 100%);
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
-        }
-        
-        .header {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            text-align: center;
-            color: white;
-        }
-        
-        .header h1 {
-            margin: 0;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            height: 100vh;
+            overflow: hidden;
         }
         
         .game-container {
@@ -35,13 +22,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 15px;
         }
         
         .game-frame {
             width: 100%;
-            max-width: 800px;
-            height: 600px;
+            max-width: 600px;
+            height: 450px;
             border: none;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -49,14 +36,14 @@
         }
         
         .controls {
-            margin-top: 20px;
+            margin-top: 15px;
             display: flex;
             gap: 15px;
             align-items: center;
         }
         
         .btn {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
             border: none;
             padding: 12px 24px;
             border-radius: 25px;
@@ -71,7 +58,7 @@
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            background: linear-gradient(45deg, #ff5252, #ff7979);
+            background: linear-gradient(45deg, #ff8c42, #ffab00);
         }
         
         .btn:active {
@@ -90,14 +77,14 @@
         
         .game-list {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 15px;
+            right: 15px;
             background: rgba(255,255,255,0.9);
             backdrop-filter: blur(10px);
-            padding: 15px;
+            padding: 12px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            max-width: 200px;
+            max-width: 180px;
         }
         
         .game-list h3 {
@@ -124,16 +111,12 @@
         }
         
         .game-list button.active {
-            background: #667eea;
+            background: #f7931e;
             color: white;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🎮 Simple Game Collection</h1>
-    </div>
-    
     <div class="game-container">
         <iframe id="gameFrame" class="game-frame" src=""></iframe>
         
@@ -161,7 +144,7 @@
             },
             {
                 title: "게임 2",
-                url: "https://deepthrees.github.io/simplegame/game2.html"
+                url: "https://deepthrees.github.io/simplegame/Piyong_game.html"
             },
             {
                 title: "게임 3", 
