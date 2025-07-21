@@ -22,13 +22,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 15px;
+            padding: 10px;
         }
         
         .game-frame {
             width: 100%;
             max-width: 600px;
-            height: 450px;
+            calc(100vh - 120px);
+            max-height: 450px;
             border: none;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -36,7 +37,7 @@
         }
         
         .controls {
-            margin-top: 15px;
+            margin-top: 10px;
             display: flex;
             gap: 15px;
             align-items: center;
