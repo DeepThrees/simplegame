@@ -183,24 +183,33 @@
             ctx.restore();
         }
 
-        // 장애물 그리기 함수
+        // 모바일 감지
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // 장애물 그리기 함수 (성능 최적화)
         function drawObstacles() {
             obstacles.forEach(obstacle => {
-                // 위쪽 장애물
-                const gradient1 = ctx.createLinearGradient(0, 0, 0, obstacle.topHeight);
-                gradient1.addColorStop(0, '#228B22');
-                gradient1.addColorStop(1, '#32CD32');
-                ctx.fillStyle = gradient1;
-                ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
+                if (isMobile) {
+                    // 모바일: 단색으로 단순화
+                    ctx.fillStyle = '#32CD32';
+                    ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
+                    ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
+                } else {
+                    // 데스크톱: 그라디언트 유지
+                    const gradient1 = ctx.createLinearGradient(0, 0, 0, obstacle.topHeight);
+                    gradient1.addColorStop(0, '#228B22');
+                    gradient1.addColorStop(1, '#32CD32');
+                    ctx.fillStyle = gradient1;
+                    ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
+                    
+                    const gradient2 = ctx.createLinearGradient(0, obstacle.bottomY, 0, canvas.height);
+                    gradient2.addColorStop(0, '#32CD32');
+                    gradient2.addColorStop(1, '#228B22');
+                    ctx.fillStyle = gradient2;
+                    ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
+                }
                 
-                // 아래쪽 장애물
-                const gradient2 = ctx.createLinearGradient(0, obstacle.bottomY, 0, canvas.height);
-                gradient2.addColorStop(0, '#32CD32');
-                gradient2.addColorStop(1, '#228B22');
-                ctx.fillStyle = gradient2;
-                ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
-                
-                // 장애물 테두리
+                // 테두리 (모든 플랫폼)
                 ctx.strokeStyle = '#006400';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
@@ -280,30 +289,36 @@
             drawBird();
         }
 
-        // 구름 그리기 함수
+        // 구름 그리기 함수 (성능 최적화)
         function drawClouds() {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            
-            // 구름 1
-            ctx.beginPath();
-            ctx.arc(80, 100, 25, 0, Math.PI * 2);
-            ctx.arc(110, 100, 35, 0, Math.PI * 2);
-            ctx.arc(140, 100, 25, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 구름 2
-            ctx.beginPath();
-            ctx.arc(280, 200, 20, 0, Math.PI * 2);
-            ctx.arc(300, 200, 30, 0, Math.PI * 2);
-            ctx.arc(320, 200, 20, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 구름 3
-            ctx.beginPath();
-            ctx.arc(150, 450, 25, 0, Math.PI * 2);
-            ctx.arc(180, 450, 35, 0, Math.PI * 2);
-            ctx.arc(210, 450, 25, 0, Math.PI * 2);
-            ctx.fill();
+            if (isMobile) {
+                // 모바일: 구름 단순화
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fillRect(80, 85, 60, 30);
+                ctx.fillRect(280, 185, 40, 30);
+                ctx.fillRect(150, 435, 60, 30);
+            } else {
+                // 데스크톱: 기존 구름 유지
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                
+                ctx.beginPath();
+                ctx.arc(80, 100, 25, 0, Math.PI * 2);
+                ctx.arc(110, 100, 35, 0, Math.PI * 2);
+                ctx.arc(140, 100, 25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(280, 200, 20, 0, Math.PI * 2);
+                ctx.arc(300, 200, 30, 0, Math.PI * 2);
+                ctx.arc(320, 200, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(150, 450, 25, 0, Math.PI * 2);
+                ctx.arc(180, 450, 35, 0, Math.PI * 2);
+                ctx.arc(210, 450, 25, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         // 게임 루프
