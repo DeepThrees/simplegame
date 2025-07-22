@@ -14,7 +14,11 @@
             min-height: 100vh;
             background: linear-gradient(135deg, #87CEEB, #98FB98);
             font-family: Arial, sans-serif;
-            touch-action: none; /* 터치 스크롤 방지 */
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         #gameContainer {
@@ -28,7 +32,7 @@
         #gameCanvas {
             display: block;
             background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
-            touch-action: none; /* 터치 스크롤 방지 */
+            touch-action: none;
         }
         
         #instructions {
@@ -76,7 +80,7 @@
     <div id="gameContainer">
         <canvas id="gameCanvas" width="400" height="600"></canvas>
         <div id="instructions">
-            Press SPACEBAR or TAP to make the bird fly! | Score: <span id="score">0</span>
+            Press SPACEBAR or TAP SCREEN to make the bird fly! | Score: <span id="score">0</span>
         </div>
         <div class="game-over" id="gameOver">
             <h2>Game Over!</h2>
@@ -100,7 +104,7 @@
         // 새 객체
         const bird = {
             x: 100,
-            y: canvas.height / 2,
+            y: canvas.height - 50;,
             width: 30,
             height: 25,
             velocity: 0,
@@ -114,32 +118,6 @@
         const obstacleWidth = 60;
         const obstacleGap = 150;
         const obstacleSpeed = 1;
-
-        // 점프 함수
-        function jump() {
-            if (gameState === 'playing') {
-                bird.velocity = bird.jumpStrength;
-            }
-        }
-
-        // 터치 이벤트 처리
-        canvas.addEventListener('touchstart', function(event) {
-            event.preventDefault();
-            jump();
-        });
-
-        canvas.addEventListener('touchmove', function(event) {
-            event.preventDefault();
-        });
-
-        canvas.addEventListener('touchend', function(event) {
-            event.preventDefault();
-        });
-
-        // 클릭 이벤트 처리 (데스크톱에서도 클릭으로 점프 가능)
-        canvas.addEventListener('click', function(event) {
-            jump();
-        });
 
         // 장애물 생성 함수
         function createObstacle() {
@@ -183,33 +161,24 @@
             ctx.restore();
         }
 
-        // 모바일 감지
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-        // 장애물 그리기 함수 (성능 최적화)
+        // 장애물 그리기 함수
         function drawObstacles() {
             obstacles.forEach(obstacle => {
-                if (isMobile) {
-                    // 모바일: 단색으로 단순화
-                    ctx.fillStyle = '#32CD32';
-                    ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
-                    ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
-                } else {
-                    // 데스크톱: 그라디언트 유지
-                    const gradient1 = ctx.createLinearGradient(0, 0, 0, obstacle.topHeight);
-                    gradient1.addColorStop(0, '#228B22');
-                    gradient1.addColorStop(1, '#32CD32');
-                    ctx.fillStyle = gradient1;
-                    ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
-                    
-                    const gradient2 = ctx.createLinearGradient(0, obstacle.bottomY, 0, canvas.height);
-                    gradient2.addColorStop(0, '#32CD32');
-                    gradient2.addColorStop(1, '#228B22');
-                    ctx.fillStyle = gradient2;
-                    ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
-                }
+                // 위쪽 장애물
+                const gradient1 = ctx.createLinearGradient(0, 0, 0, obstacle.topHeight);
+                gradient1.addColorStop(0, '#228B22');
+                gradient1.addColorStop(1, '#32CD32');
+                ctx.fillStyle = gradient1;
+                ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
                 
-                // 테두리 (모든 플랫폼)
+                // 아래쪽 장애물
+                const gradient2 = ctx.createLinearGradient(0, obstacle.bottomY, 0, canvas.height);
+                gradient2.addColorStop(0, '#32CD32');
+                gradient2.addColorStop(1, '#228B22');
+                ctx.fillStyle = gradient2;
+                ctx.fillRect(obstacle.x, obstacle.bottomY, obstacleWidth, obstacle.bottomHeight);
+                
+                // 장애물 테두리
                 ctx.strokeStyle = '#006400';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(obstacle.x, 0, obstacleWidth, obstacle.topHeight);
@@ -289,35 +258,36 @@
             drawBird();
         }
 
-        // 구름 그리기 함수 (성능 최적화)
+        // 구름 그리기 함수
         function drawClouds() {
-            if (isMobile) {
-                // 모바일: 구름 단순화
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.fillRect(80, 85, 60, 30);
-                ctx.fillRect(280, 185, 40, 30);
-                ctx.fillRect(150, 435, 60, 30);
-            } else {
-                // 데스크톱: 기존 구름 유지
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                
-                ctx.beginPath();
-                ctx.arc(80, 100, 25, 0, Math.PI * 2);
-                ctx.arc(110, 100, 35, 0, Math.PI * 2);
-                ctx.arc(140, 100, 25, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.arc(280, 200, 20, 0, Math.PI * 2);
-                ctx.arc(300, 200, 30, 0, Math.PI * 2);
-                ctx.arc(320, 200, 20, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.arc(150, 450, 25, 0, Math.PI * 2);
-                ctx.arc(180, 450, 35, 0, Math.PI * 2);
-                ctx.arc(210, 450, 25, 0, Math.PI * 2);
-                ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            
+            // 구름 1
+            ctx.beginPath();
+            ctx.arc(80, 100, 25, 0, Math.PI * 2);
+            ctx.arc(110, 100, 35, 0, Math.PI * 2);
+            ctx.arc(140, 100, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 구름 2
+            ctx.beginPath();
+            ctx.arc(280, 200, 20, 0, Math.PI * 2);
+            ctx.arc(300, 200, 30, 0, Math.PI * 2);
+            ctx.arc(320, 200, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 구름 3
+            ctx.beginPath();
+            ctx.arc(150, 450, 25, 0, Math.PI * 2);
+            ctx.arc(180, 450, 35, 0, Math.PI * 2);
+            ctx.arc(210, 450, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 점프 함수
+        function jump() {
+            if (gameState === 'playing') {
+                bird.velocity = bird.jumpStrength;
             }
         }
 
@@ -354,6 +324,18 @@
                 event.preventDefault();
                 jump();
             }
+        });
+
+        // 터치 이벤트 리스너 (모바일 지원)
+        canvas.addEventListener('touchstart', function(event) {
+            event.preventDefault();
+            jump();
+        });
+
+        // 마우스 클릭 이벤트 리스너 (데스크톱에서도 클릭 가능)
+        canvas.addEventListener('click', function(event) {
+            event.preventDefault();
+            jump();
         });
 
         // 게임 시작
