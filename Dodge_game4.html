@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다람쥐 도토리 피하기</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #4CAF50, #81C784, #66BB6A);
+            font-family: 'Comic Sans MS', cursive, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            padding: 15px 25px;
+            text-align: center;
+            border: 3px solid #2E7D32;
+        }
+        
+        #gameTitle {
+            color: #2E7D32;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #gameCanvas {
+            border: 4px solid #2E7D32;
+            border-radius: 15px;
+            background: linear-gradient(to bottom, #E8F5E8, #C8E6C9);
+            cursor: none;
+            touch-action: none;
+        }
+        
+        #gameInfo {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2E7D32;
+        }
+        
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(46, 125, 50, 0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            border: 3px solid #1B5E20;
+        }
+        
+        #startButton, #restartButton {
+            background: linear-gradient(135deg, #4CAF50, #66BB6A);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        #startButton:hover, #restartButton:hover {
+            background: linear-gradient(135deg, #45a049, #5eb85e);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        #instructions {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #2E7D32;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <h1 id="gameTitle">DODGE Game</h1>
+        <div style="position: relative;">
+            <canvas id="gameCanvas" width="400" height="450"></canvas>
+            <div id="gameOver">
+                <h2>Game Over!</h2>
+                <p>Final Score: <span id="finalScore"></span></p>
+                <p>🐿️ Good try! 🌰</p>
+                <button id="restartButton">Restart</button>
+            </div>
+        </div>
+        <div id="gameInfo">
+            <div>Score: <span id="score">0</span></div>
+            <div>Lives: <span id="lives">3</span></div>
+        </div>
+        <button id="startButton">Start Game</button>
+        <div id="instructions">
+            Use ← → arrow keys to move (Desktop)<br>
+            Touch and drag the squirrel to move (Mobile)<br>
+            Avoid falling acorns, but collect green simplegame.life ads for bonus lives!
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const gameOverDiv = document.getElementById('gameOver');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const finalScoreElement = document.getElementById('finalScore');
+
+        let gameRunning = false;
+        let score = 0;
+        let lives = 3;
+        let player = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 60,
+            width: 30,
+            height: 40,
+            speed: 6
+        };
+        let acorns = [];
+        let ads = [];
+        let gameSpeed = 1;
+        let spawnRate = 0.02;
+        let lastAdTime = 0;
+        let adInterval = 10000; // 10초마다 광고 생성
+        
+        // 터치 관련 변수
+        let isTouching = false;
+        let touchOffsetX = 0;
+        let touchOffsetY = 0;
+
+        // 키보드 입력 처리
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // 터치 이벤트 처리
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+            
+            // 캐릭터 영역 내에서 터치했는지 확인
+            if (touchX >= player.x && touchX <= player.x + player.width &&
+                touchY >= player.y && touchY <= player.y + player.height) {
+                isTouching = true;
+                touchOffsetX = touchX - player.x;
+                touchOffsetY = touchY - player.y;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!gameRunning || !isTouching) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const newX = touchX - touchOffsetX;
+            
+            // 화면 경계 내에서만 이동
+            if (newX >= 0 && newX <= canvas.width - player.width) {
+                player.x = newX;
+            } else if (newX < 0) {
+                player.x = 0;
+            } else {
+                player.x = canvas.width - player.width;
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isTouching = false;
+        });
+
+        canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            isTouching = false;
+        });
+
+        function drawSquirrel() {
+            const centerX = player.x + player.width / 2;
+            const centerY = player.y + player.height / 2;
+            
+            // 꼬리
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 12, centerY - 8, 8, 16, Math.PI / 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // 몸체
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY + 4, 8, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 머리
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 귀
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 6, centerY - 14, 3.2, 4.8, -Math.PI / 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.ellipse(centerX + 6, centerY - 14, 3.2, 4.8, Math.PI / 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 귀 안쪽
+            ctx.fillStyle = '#FFB6C1';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 6, centerY - 14, 1.6, 2.4, -Math.PI / 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(centerX + 6, centerY - 14, 1.6, 2.4, Math.PI / 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 눈
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(centerX - 3.2, centerY - 10, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX + 3.2, centerY - 10, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 눈 반짝임
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath();
+            ctx.arc(centerX - 2.4, centerY - 11.2, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX + 4, centerY - 11.2, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 코
+            ctx.fillStyle = '#FF69B4';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 7.2, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 입
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 4, 2.4, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        function drawAcorn(acorn) {
+            const centerX = acorn.x + acorn.width / 2;
+            const centerY = acorn.y + acorn.height / 2;
+            
+            // 도토리 몸통
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY + 3, 8, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 도토리 뚜껑
+            ctx.fillStyle = '#654321';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY - 6, 8, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 도토리 뚜껑 무늬
+            ctx.strokeStyle = '#4A2C17';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - 6, 3 + i * 2, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // 도토리 줄기
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(centerX - 1, centerY - 12, 2, 4);
+        }
+
+        function drawAd(ad) {
+            // 광고 배경
+            ctx.fillStyle = 'rgba(0, 200, 0, 0.8)';
+            ctx.fillRect(ad.x, ad.y, ad.width, ad.height);
+            
+            // 광고 테두리
+            ctx.strokeStyle = '#00AA00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(ad.x, ad.y, ad.width, ad.height);
+            
+            // 광고 텍스트
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('simplegame.life', ad.x + ad.width / 2, ad.y + ad.height / 2 + 4);
+        }
+
+        function spawnAcorn() {
+            if (Math.random() < spawnRate) {
+                acorns.push({
+                    x: Math.random() * (canvas.width - 25),
+                    y: -25,
+                    width: 25,
+                    height: 30,
+                    speed: 2 + Math.random() * 2,
+                    rotation: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function spawnAdByTime() {
+            const currentTime = Date.now();
+            if (currentTime - lastAdTime >= adInterval) {
+                ads.push({
+                    x: Math.random() * (canvas.width - 120),
+                    y: -30,
+                    width: 120,
+                    height: 25,
+                    speed: 1 + Math.random() * 1.5
+                });
+                lastAdTime = currentTime;
+            }
+        }
+
+        function updatePlayer() {
+            // 키보드 입력 처리
+            if (keys['ArrowLeft']) {
+                player.x -= player.speed;
+                if (player.x < -player.width) {
+                    player.x = canvas.width;
+                }
+            }
+            if (keys['ArrowRight']) {
+                player.x += player.speed;
+                if (player.x > canvas.width) {
+                    player.x = -player.width;
+                }
+            }
+        }
+
+        function updateAcorns() {
+            for (let i = acorns.length - 1; i >= 0; i--) {
+                acorns[i].y += acorns[i].speed * gameSpeed;
+                acorns[i].rotation += 0.1;
+                
+                // 화면을 벗어난 도토리 제거 및 점수 증가
+                if (acorns[i].y > canvas.height) {
+                    acorns.splice(i, 1);
+                    score += 10;
+                    scoreElement.textContent = score;
+                }
+            }
+        }
+
+        function updateAds() {
+            for (let i = ads.length - 1; i >= 0; i--) {
+                ads[i].y += ads[i].speed * gameSpeed;
+                
+                // 화면을 벗어난 광고 제거 및 점수 증가
+                if (ads[i].y > canvas.height) {
+                    ads.splice(i, 1);
+                    score += 20; // 광고를 피하면 더 많은 점수
+                    scoreElement.textContent = score;
+                }
+            }
+        }
+
+        function checkCollisions() {
+            // 도토리 충돌 검사
+            for (let i = acorns.length - 1; i >= 0; i--) {
+                const acorn = acorns[i];
+                if (player.x + 5 < acorn.x + acorn.width - 5 &&
+                    player.x + player.width - 5 > acorn.x + 5 &&
+                    player.y + 5 < acorn.y + acorn.height - 5 &&
+                    player.y + player.height - 5 > acorn.y + 5) {
+                    
+                    lives--;
+                    livesElement.textContent = lives;
+                    acorns.splice(i, 1);
+                    
+                    flashScreen('#FF0000');
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+
+            // 광고 충돌 검사 (라이프 증가!)
+            for (let i = ads.length - 1; i >= 0; i--) {
+                const ad = ads[i];
+                if (player.x + 5 < ad.x + ad.width - 5 &&
+                    player.x + player.width - 5 > ad.x + 5 &&
+                    player.y + 5 < ad.y + ad.height - 5 &&
+                    player.y + player.height - 5 > ad.y + 5) {
+                    
+                    lives++;
+                    livesElement.textContent = lives;
+                    ads.splice(i, 1);
+                    score += 50; // 보너스 점수
+                    scoreElement.textContent = score;
+                    
+                    flashScreen('#00FF00'); // 초록색 깜빡임
+                }
+            }
+        }
+
+        function flashScreen(color) {
+            canvas.style.filter = `brightness(0.5) sepia(1) hue-rotate(${color === '#FF0000' ? '0' : '270'}deg)`;
+            setTimeout(() => {
+                canvas.style.filter = 'brightness(1) hue-rotate(0deg)';
+            }, 150);
+        }
+
+        function increaseDifficulty() {
+            gameSpeed = 1 + (score / 5000);
+            spawnRate = 0.02 + (score / 15000);
+            adSpawnRate = 0.005 + (score / 25000);
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // 화면 클리어
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 게임 로직 업데이트
+            updatePlayer();
+            spawnAcorn();
+            spawnAdByTime();
+            updateAcorns();
+            updateAds();
+            checkCollisions();
+            increaseDifficulty();
+
+            // 그리기
+            drawSquirrel();
+            acorns.forEach(drawAcorn);
+            ads.forEach(drawAd);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            lives = 3;
+            gameSpeed = 1;
+            spawnRate = 0.02;
+            adSpawnRate = 0.0000007;
+            acorns = [];
+            ads = [];
+            player.x = canvas.width / 2 - 15;
+            isTouching = false;
+            
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            startButton.style.display = 'none';
+            gameOverDiv.style.display = 'none';
+            
+            gameLoop();
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            isTouching = false;
+            finalScoreElement.textContent = score;
+            gameOverDiv.style.display = 'block';
+        }
+
+        function restartGame() {
+            gameOverDiv.style.display = 'none';
+            startButton.style.display = 'inline-block';
+        }
+
+        // 이벤트 리스너
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+
+        canvas.addEventListener('click', () => {
+            canvas.focus();
+        });
+        
+        // 초기 화면 그리기
+        drawSquirrel();
+    </script>
+</body>
+</html>
