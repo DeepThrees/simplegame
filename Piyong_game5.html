@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flying Squirrel - Acorn Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4CAF50, #81C784, #66BB6A);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            border: 3px solid #2E7D32;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #4CAF50 100%);
+            touch-action: none;
+        }
+        
+        #helpButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #FFD700;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2E7D32;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        #helpButton:hover {
+            background: #FFC107;
+            transform: scale(1.1);
+        }
+        
+        .help-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(46, 125, 50, 0.95);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            border: 3px solid #4CAF50;
+            z-index: 100;
+        }
+        
+        .help-modal h3 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        
+        .help-modal button {
+            background: #FFD700;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: #2E7D32;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .help-modal button:hover {
+            background: #FFC107;
+            transform: scale(1.05);
+        }
+        
+        #scoreDisplay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(46, 125, 50, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #4CAF50;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(46, 125, 50, 0.95);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            border: 3px solid #4CAF50;
+        }
+        
+        .game-over h2 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        
+        .game-over button {
+            background: #FFD700;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: #2E7D32;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .game-over button:hover {
+            background: #FFC107;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <button id="helpButton" onclick="toggleHelp()">?</button>
+        <div id="scoreDisplay">Score: <span id="score">0</span></div>
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">Restart Game</button>
+        </div>
+        <div class="help-modal" id="helpModal">
+            <h3>How to Play</h3>
+            <p>Press SPACEBAR or TAP SCREEN to make the squirrel fly!</p>
+            <p>Avoid hitting the trees and try to get the highest score!</p>
+            <button onclick="toggleHelp()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverDiv = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+
+        // 게임 상태
+        let gameState = 'playing';
+        let score = 0;
+        let animationId;
+
+        // Squirrel object
+        const squirrel = {
+            x: 80,
+            y: canvas.height - 50,
+            width: 45,
+            height: 45,
+            velocity: 0,
+            gravity: 0.1,
+            jumpStrength: -3.5,
+            rotation: 0
+        };
+
+        // Tree obstacles array
+        let trees = [];
+        const treeWidth = 60;
+        const treeGap = 140;
+        const treeSpeed = 0.8;
+
+        // Create tree function
+        function createTree() {
+            const minHeight = 80;
+            const maxHeight = canvas.height - treeGap - 80;
+            const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            trees.push({
+                x: canvas.width,
+                topHeight: topHeight,
+                bottomY: topHeight + treeGap,
+                bottomHeight: canvas.height - topHeight - treeGap,
+                passed: false
+            });
+        }
+
+        // 다람쥐 그리기 함수
+        function drawSquirrel() {
+            ctx.save();
+            
+            // 다람쥐의 회전 각도 계산
+            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.15, -0.6), 0.6);
+            
+            ctx.translate(squirrel.x + squirrel.width/2, squirrel.y + squirrel.height/2);
+            ctx.rotate(squirrel.rotation);
+            
+            const centerX = 0;
+            const centerY = 0;
+            const scale = 0.17; // 크기 조절
+            
+            // 꼬리
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 50*scale, centerY - 20*scale, 30*scale, 60*scale, 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 몸체
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY + 10*scale, 40*scale, 50*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 머리
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY - 20*scale, 35*scale, 35*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 귀
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 15*scale, centerY - 35*scale, 10*scale, 12*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 15*scale, centerY - 35*scale, 10*scale, 12*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 귀 안쪽
+            ctx.fillStyle = '#FFB6C1';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 15*scale, centerY - 33*scale, 6*scale, 8*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 15*scale, centerY - 33*scale, 6*scale, 8*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 눈
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 8*scale, centerY - 25*scale, 7*scale, 9*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 8*scale, centerY - 25*scale, 7*scale, 9*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 눈 반짝임
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 6*scale, centerY - 27*scale, 2*scale, 2*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 10*scale, centerY - 27*scale, 2*scale, 2*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 코
+            ctx.fillStyle = '#FF69B4';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY - 15*scale, 4*scale, 3*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 입
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2*scale;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - 10*scale, 10*scale, 0, Math.PI);
+            ctx.stroke();
+            
+            // 팔
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 25*scale, centerY + 5*scale, 12*scale, 20*scale, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 25*scale, centerY + 5*scale, 12*scale, 20*scale, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 다리
+            ctx.fillStyle = '#D2691E';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 12*scale, centerY + 35*scale, 10*scale, 17*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 12*scale, centerY + 35*scale, 10*scale, 17*scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // 나무 그리기 함수
+        function drawTrees() {
+            trees.forEach(tree => {
+                // 위쪽 나무 줄기
+                const gradient1 = ctx.createLinearGradient(0, 0, 0, tree.topHeight);
+                gradient1.addColorStop(0, '#8B4513');
+                gradient1.addColorStop(0.3, '#A0522D');
+                gradient1.addColorStop(1, '#CD853F');
+                ctx.fillStyle = gradient1;
+                ctx.fillRect(tree.x, 0, treeWidth, tree.topHeight);
+                
+                // 아래쪽 나무 줄기
+                const gradient2 = ctx.createLinearGradient(0, tree.bottomY, 0, canvas.height);
+                gradient2.addColorStop(0, '#CD853F');
+                gradient2.addColorStop(0.7, '#A0522D');
+                gradient2.addColorStop(1, '#8B4513');
+                ctx.fillStyle = gradient2;
+                ctx.fillRect(tree.x, tree.bottomY, treeWidth, tree.bottomHeight);
+                
+                // 나무 질감
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(tree.x + 10 + i * 20, 0);
+                    ctx.lineTo(tree.x + 10 + i * 20, tree.topHeight);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(tree.x + 10 + i * 20, tree.bottomY);
+                    ctx.lineTo(tree.x + 10 + i * 20, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // 나무 테두리
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(tree.x, 0, treeWidth, tree.topHeight);
+                ctx.strokeRect(tree.x, tree.bottomY, treeWidth, tree.bottomHeight);
+                
+                // 나뭇잎 장식 (네모)
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(tree.x, tree.topHeight - 15, treeWidth, 15);
+                ctx.fillRect(tree.x, tree.bottomY, treeWidth, 15);
+            });
+        }
+
+        // 충돌 감지 함수
+        function checkCollisions() {
+            // 바닥이나 천장 충돌
+            if (squirrel.y + squirrel.height >= canvas.height || squirrel.y <= 0) {
+                return true;
+            }
+            
+            // 나무 충돌
+            for (let tree of trees) {
+                if (squirrel.x < tree.x + treeWidth &&
+                    squirrel.x + squirrel.width > tree.x) {
+                    if (squirrel.y < tree.topHeight || 
+                        squirrel.y + squirrel.height > tree.bottomY) {
+                        return true;
+                    }
+                }
+                
+                // 점수 계산
+                if (!tree.passed && squirrel.x > tree.x + treeWidth) {
+                    tree.passed = true;
+                    score++;
+                    scoreElement.textContent = score;
+                }
+            }
+            
+            return false;
+        }
+
+        // 게임 업데이트 함수
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            // 다람쥐 물리 업데이트
+            squirrel.velocity += squirrel.gravity;
+            squirrel.y += squirrel.velocity;
+            
+            // 나무 업데이트
+            trees.forEach((tree, index) => {
+                tree.x -= treeSpeed;
+                
+                // 화면을 벗어난 나무 제거
+                if (tree.x + treeWidth < 0) {
+                    trees.splice(index, 1);
+                }
+            });
+            
+            // 새 나무 생성
+            if (trees.length === 0 || trees[trees.length - 1].x < canvas.width - 250) {
+                createTree();
+            }
+            
+            // 충돌 감지
+            if (checkCollisions()) {
+                gameOver();
+            }
+        }
+
+        // 게임 렌더링 함수
+        function render() {
+            // 캔버스 클리어
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 배경 구름 그리기
+            drawClouds();
+            
+            // 나무 그리기
+            drawTrees();
+            
+            // 다람쥐 그리기
+            drawSquirrel();
+        }
+
+        // 구름 그리기 함수
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            
+            // 구름들
+            const clouds = [
+                {x: 80, y: 80, sizes: [25, 35, 25]},
+                {x: 280, y: 150, sizes: [20, 30, 20]},
+                {x: 150, y: 400, sizes: [25, 35, 25]}
+            ];
+            
+            clouds.forEach((cloud, index) => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.sizes[0], 0, Math.PI * 2);
+                ctx.arc(cloud.x + 30, cloud.y, cloud.sizes[1], 0, Math.PI * 2);
+                ctx.arc(cloud.x + 60, cloud.y, cloud.sizes[2], 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 첫 번째 구름에 텍스트 추가
+                if (index === 0) {
+                    ctx.fillStyle = 'rgba(46, 125, 50, 0.9)';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('simplegame', cloud.x + 30, cloud.y - 5);
+                    ctx.fillText('.life', cloud.x + 30, cloud.y + 10);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                }
+            });
+        }
+
+        // 점프 함수
+        function jump() {
+            if (gameState === 'playing') {
+                squirrel.velocity = squirrel.jumpStrength;
+            }
+        }
+
+        // 게임 루프
+        function gameLoop() {
+            update();
+            render();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        // 게임 오버 함수
+        function gameOver() {
+            gameState = 'gameOver';
+            finalScoreElement.textContent = score;
+            gameOverDiv.style.display = 'block';
+            cancelAnimationFrame(animationId);
+        }
+
+        // 게임 재시작 함수
+        function restartGame() {
+            gameState = 'playing';
+            score = 0;
+            scoreElement.textContent = score;
+            squirrel.y = canvas.height / 2;
+            squirrel.velocity = 0;
+            squirrel.rotation = 0;
+            trees = [];
+            gameOverDiv.style.display = 'none';
+            gameLoop();
+        }
+
+        // 도움말 토글 함수
+        function toggleHelp() {
+            const helpModal = document.getElementById('helpModal');
+            helpModal.style.display = helpModal.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // 이벤트 리스너들
+        document.addEventListener('keydown', function(event) {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                jump();
+            }
+        });
+
+        canvas.addEventListener('touchstart', function(event) {
+            event.preventDefault();
+            jump();
+        });
+
+        canvas.addEventListener('click', function(event) {
+            event.preventDefault();
+            jump();
+        });
+
+        // 게임 시작
+        createTree();
+        gameLoop();
+    </script>
+</body>
+</html>
