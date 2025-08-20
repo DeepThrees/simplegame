@@ -214,7 +214,7 @@
             ctx.save();
             
             // 다람쥐의 회전 각도 계산
-            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.002, -0.6), 0.6);
+            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.0018, -0.6), 0.6);
             
             ctx.translate(squirrel.x + squirrel.width/2, squirrel.y + squirrel.height/2);
             ctx.rotate(squirrel.rotation);
@@ -479,7 +479,7 @@
             lastTime = currentTime;
             
             // 최대 델타 타임 제한 (프레임 드롭 시 게임이 망가지는 것 방지)
-            const limitedDeltaTime = Math.min(deltaTime, 1/120);
+            const limitedDeltaTime = Math.min(deltaTime, 1/90);
             
             update(limitedDeltaTime);
             render();
