@@ -387,7 +387,7 @@
         }
 
         // 게임 업데이트 함수 (델타 타임 적용)
-        function update(limitedDeltaTime) {
+        function update(deltaTime) {
             if (gameState !== 'playing') return;
             
             // 다람쥐 물리 업데이트 (델타 타임 적용)
@@ -479,9 +479,9 @@
             lastTime = currentTime;
             
             // 최대 델타 타임 제한 (프레임 드롭 시 게임이 망가지는 것 방지)
-            const limitedDeltaTime = Math.min(deltaTime, 1/150);
+            const limitedDeltaTime = Math.min(deltaTime, 1/90);
             
-            update(deltaTime);
+            update(limitedDeltaTime);
             render();
             animationId = requestAnimationFrame(gameLoop);
         }
