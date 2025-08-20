@@ -174,9 +174,6 @@
         let gameState = 'playing';
         let score = 0;
         let animationId;
-        let lastTime = 0;
-        const targetFPS = 60;
-        const frameInterval = 1000 / targetFPS;
 
         // Squirrel object
         const squirrel = {
@@ -186,7 +183,7 @@
             height: 45,
             velocity: 0,
             gravity: 0.15,
-            jumpStrength: -4.0,
+            jumpStrength: -4.2,
             rotation: 0
         };
 
@@ -194,7 +191,7 @@
         let trees = [];
         const treeWidth = 60;
         const treeGap = 140;
-        const treeSpeed = 1.5;
+        const treeSpeed = 1.4;
 
         // Create tree function
         function createTree() {
@@ -470,12 +467,9 @@
         }
 
         // 게임 루프
-        function gameLoop(currentTime) {
-            if (currentTime - lastTime >= frameInterval) {
-                update();
-                render();
-                lastTime = currentTime;
-            }
+        function gameLoop() {
+            update();
+            render();
             animationId = requestAnimationFrame(gameLoop);
         }
 
