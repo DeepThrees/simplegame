@@ -483,7 +483,7 @@
             
             update(limitedDeltaTime);
             render();
-            animationId = requestAnimationFrame(gameLoop);
+            animationId = setTimeout(gameLoop, 1000/60);
         }
 
         // 게임 오버 함수
@@ -505,7 +505,7 @@
             squirrel.rotation = 0;
             trees = [];
             gameOverDiv.style.display = 'none';
-            requestAnimationFrame(gameLoop);
+            setTimeout(gameLoop, 1000/60);
         }
 
         // 도움말 토글 함수
@@ -534,7 +534,7 @@
 
         // 게임 시작
         createTree();
-        requestAnimationFrame(gameLoop);
+        setTimeout(gameLoop, 1000/60);
     </script>
 </body>
 </html>
