@@ -175,22 +175,17 @@
         let score = 0;
         let animationId;
         let lastTime = 0;
-        const targetFPS = 120;
-        const frameInterval = 1000 / targetFPS;
-        
-        // 구름 캐싱
-        let cloudCanvas = null;
-        let cloudsCached = false;
+        let deltaTime = 0;
 
-        // Squirrel object (고정 deltaTime 물리)
+        // Squirrel object (시간 기반 물리값으로 조정)
         const squirrel = {
             x: 80,
             y: canvas.height - 50,
             width: 45,
             height: 45,
             velocity: 0,
-            gravity: 2500, // 픽셀/초²
-            jumpStrength: -450, // 픽셀/초
+            gravity: 0.006, // per millisecond
+            jumpStrength: -0.21, // per millisecond
             rotation: 0
         };
 
@@ -198,7 +193,7 @@
         let trees = [];
         const treeWidth = 60;
         const treeGap = 140;
-        const treeSpeed = 220; // 픽셀/초
+        const treeSpeed = 0.048; // pixels per millisecond
 
         // Create tree function
         function createTree() {
@@ -215,51 +210,12 @@
             });
         }
 
-        // 구름 캐싱 함수
-        function createCloudCache() {
-            if (cloudsCached) return;
-            
-            cloudCanvas = document.createElement('canvas');
-            cloudCanvas.width = canvas.width;
-            cloudCanvas.height = canvas.height;
-            const cloudCtx = cloudCanvas.getContext('2d');
-            
-            cloudCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            
-            // 구름들
-            const clouds = [
-                {x: 80, y: 80, sizes: [25, 35, 25]},
-                {x: 280, y: 150, sizes: [20, 30, 20]},
-                {x: 150, y: 400, sizes: [25, 35, 25]}
-            ];
-            
-            clouds.forEach((cloud, index) => {
-                cloudCtx.beginPath();
-                cloudCtx.arc(cloud.x, cloud.y, cloud.sizes[0], 0, Math.PI * 2);
-                cloudCtx.arc(cloud.x + 30, cloud.y, cloud.sizes[1], 0, Math.PI * 2);
-                cloudCtx.arc(cloud.x + 60, cloud.y, cloud.sizes[2], 0, Math.PI * 2);
-                cloudCtx.fill();
-                
-                // 첫 번째 구름에 텍스트 추가
-                if (index === 0) {
-                    cloudCtx.fillStyle = 'rgba(46, 125, 50, 0.9)';
-                    cloudCtx.font = 'bold 14px Arial';
-                    cloudCtx.textAlign = 'center';
-                    cloudCtx.fillText('simplegame', cloud.x + 30, cloud.y - 5);
-                    cloudCtx.fillText('.life', cloud.x + 30, cloud.y + 10);
-                    cloudCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                }
-            });
-            
-            cloudsCached = true;
-        }
-
         // 다람쥐 그리기 함수
         function drawSquirrel() {
             ctx.save();
             
             // 다람쥐의 회전 각도 계산
-            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.08, -0.6), 0.6);
+            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.15, -0.6), 0.6);
             
             ctx.translate(squirrel.x + squirrel.width/2, squirrel.y + squirrel.height/2);
             ctx.rotate(squirrel.rotation);
@@ -431,17 +387,15 @@
             return false;
         }
 
-        // 게임 업데이트 함수 (고정 deltaTime)
+        // 게임 업데이트 함수 (Delta Time 적용)
         function update() {
             if (gameState !== 'playing') return;
             
-            const deltaTime = 1/60; // 고정 deltaTime
-            
-            // 다람쥐 물리 업데이트
+            // 다람쥐 물리 업데이트 (delta time 적용)
             squirrel.velocity += squirrel.gravity * deltaTime;
             squirrel.y += squirrel.velocity * deltaTime;
             
-            // 나무 업데이트
+            // 나무 업데이트 (delta time 적용)
             trees.forEach((tree, index) => {
                 tree.x -= treeSpeed * deltaTime;
                 
@@ -467,7 +421,7 @@
             // 캔버스 클리어
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 배경 구름 그리기 (캐시 사용)
+            // 배경 구름 그리기
             drawClouds();
             
             // 나무 그리기
@@ -477,10 +431,34 @@
             drawSquirrel();
         }
 
-        // 구름 그리기 함수 (최적화된 버전)
+        // 구름 그리기 함수
         function drawClouds() {
-            createCloudCache();
-            ctx.drawImage(cloudCanvas, 0, 0);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            
+            // 구름들
+            const clouds = [
+                {x: 80, y: 80, sizes: [25, 35, 25]},
+                {x: 280, y: 150, sizes: [20, 30, 20]},
+                {x: 150, y: 400, sizes: [25, 35, 25]}
+            ];
+            
+            clouds.forEach((cloud, index) => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.sizes[0], 0, Math.PI * 2);
+                ctx.arc(cloud.x + 30, cloud.y, cloud.sizes[1], 0, Math.PI * 2);
+                ctx.arc(cloud.x + 60, cloud.y, cloud.sizes[2], 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 첫 번째 구름에 텍스트 추가
+                if (index === 0) {
+                    ctx.fillStyle = 'rgba(46, 125, 50, 0.9)';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('simplegame', cloud.x + 30, cloud.y - 5);
+                    ctx.fillText('.life', cloud.x + 30, cloud.y + 10);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                }
+            });
         }
 
         // 점프 함수
@@ -490,13 +468,15 @@
             }
         }
 
-        // 게임 루프 (고정 deltaTime)
+        // 게임 루프 (Delta Time 계산)
         function gameLoop(currentTime) {
-            if (currentTime - lastTime >= frameInterval) {
-                update();
-                render();
-                lastTime = currentTime;
-            }
+            // Delta time 계산 (밀리초 단위)
+            if (lastTime === 0) lastTime = currentTime;
+            deltaTime = Math.min(currentTime - lastTime, 50); // 최대 50ms로 제한
+            lastTime = currentTime;
+            
+            update();
+            render();
             animationId = requestAnimationFrame(gameLoop);
         }
 
@@ -517,8 +497,9 @@
             squirrel.velocity = 0;
             squirrel.rotation = 0;
             trees = [];
+            lastTime = 0; // 타이머 리셋
+            deltaTime = 0;
             gameOverDiv.style.display = 'none';
-            cloudsCached = false; // 구름 캐시 리셋
             gameLoop();
         }
 
