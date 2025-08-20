@@ -468,11 +468,13 @@
         }
 
         // 게임 루프 (델타 타임 적용)
-        function gameLoop(currentTime) {
-            // 첫 실행시 lastTime 초기화
-            if (lastTime === 0) {
-                lastTime = currentTime;
-            }
+        function gameLoop() {
+            const fixedDeltaTime = 1/60; // 고정 60fps
+            
+            update(fixedDeltaTime);
+            render();
+            animationId = setTimeout(gameLoop, 1000/60);
+        }
             
             // 델타 타임 계산 (초 단위)
             const deltaTime = (currentTime - lastTime) / 1000;
