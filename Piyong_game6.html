@@ -183,8 +183,8 @@
             width: 45,
             height: 45,
             velocity: 0,
-            gravity: 1900, // 픽셀/초²
-            jumpStrength: -480, // 픽셀/초
+            gravity: 2000, // 픽셀/초²
+            jumpStrength: -500, // 픽셀/초
             rotation: 0
         };
 
@@ -192,7 +192,7 @@
         let trees = [];
         const treeWidth = 60;
         const treeGap = 140;
-        const treeSpeed = 180; // 픽셀/초
+        const treeSpeed = 200; // 픽셀/초
 
         // Create tree function
         function createTree() {
@@ -479,7 +479,7 @@
             lastTime = currentTime;
             
             // 최대 델타 타임 제한 (프레임 드롭 시 게임이 망가지는 것 방지)
-            const limitedDeltaTime = Math.min(deltaTime, 1/90);
+            const limitedDeltaTime = Math.min(deltaTime, 1/100);
             
             update(limitedDeltaTime);
             render();
