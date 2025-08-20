@@ -479,7 +479,7 @@
             lastTime = currentTime;
             
             // 최대 델타 타임 제한 (프레임 드롭 시 게임이 망가지는 것 방지)
-            const limitedDeltaTime = Math.min(deltaTime, 1/60);
+            const limitedDeltaTime = Math.min(deltaTime, 1/90);
             
             update(limitedDeltaTime);
             render();
