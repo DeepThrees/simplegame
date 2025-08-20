@@ -183,8 +183,8 @@
             width: 45,
             height: 45,
             velocity: 0,
-            gravity: 2800, // 픽셀/초²
-            jumpStrength: -600, // 픽셀/초
+            gravity: 3300, // 픽셀/초²
+            jumpStrength: -700, // 픽셀/초
             rotation: 0
         };
 
@@ -214,7 +214,7 @@
             ctx.save();
             
             // 다람쥐의 회전 각도 계산
-            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.002, -0.6), 0.6);
+            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.0025, -0.6), 0.6);
             
             ctx.translate(squirrel.x + squirrel.width/2, squirrel.y + squirrel.height/2);
             ctx.rotate(squirrel.rotation);
