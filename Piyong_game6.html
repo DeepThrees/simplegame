@@ -175,17 +175,16 @@
         let score = 0;
         let animationId;
         let lastTime = 0;
-        let deltaTime = 0;
 
-        // Squirrel object (시간 기반 물리값으로 조정)
+        // Squirrel object (속도를 픽셀/초 단위로 변경)
         const squirrel = {
             x: 80,
             y: canvas.height - 50,
             width: 45,
             height: 45,
             velocity: 0,
-            gravity: 0.006, // per millisecond
-            jumpStrength: -0.21, // per millisecond
+            gravity: 1200, // 픽셀/초²
+            jumpStrength: -300, // 픽셀/초
             rotation: 0
         };
 
@@ -193,7 +192,7 @@
         let trees = [];
         const treeWidth = 60;
         const treeGap = 140;
-        const treeSpeed = 0.048; // pixels per millisecond
+        const treeSpeed = 180; // 픽셀/초
 
         // Create tree function
         function createTree() {
@@ -215,7 +214,7 @@
             ctx.save();
             
             // 다람쥐의 회전 각도 계산
-            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.15, -0.6), 0.6);
+            squirrel.rotation = Math.min(Math.max(squirrel.velocity * 0.002, -0.6), 0.6);
             
             ctx.translate(squirrel.x + squirrel.width/2, squirrel.y + squirrel.height/2);
             ctx.rotate(squirrel.rotation);
@@ -387,15 +386,15 @@
             return false;
         }
 
-        // 게임 업데이트 함수 (Delta Time 적용)
-        function update() {
+        // 게임 업데이트 함수 (델타 타임 적용)
+        function update(deltaTime) {
             if (gameState !== 'playing') return;
             
-            // 다람쥐 물리 업데이트 (delta time 적용)
+            // 다람쥐 물리 업데이트 (델타 타임 적용)
             squirrel.velocity += squirrel.gravity * deltaTime;
             squirrel.y += squirrel.velocity * deltaTime;
             
-            // 나무 업데이트 (delta time 적용)
+            // 나무 업데이트 (델타 타임 적용)
             trees.forEach((tree, index) => {
                 tree.x -= treeSpeed * deltaTime;
                 
@@ -468,14 +467,21 @@
             }
         }
 
-        // 게임 루프 (Delta Time 계산)
+        // 게임 루프 (델타 타임 적용)
         function gameLoop(currentTime) {
-            // Delta time 계산 (밀리초 단위)
-            if (lastTime === 0) lastTime = currentTime;
-            deltaTime = Math.min(currentTime - lastTime, 50); // 최대 50ms로 제한
+            // 첫 실행시 lastTime 초기화
+            if (lastTime === 0) {
+                lastTime = currentTime;
+            }
+            
+            // 델타 타임 계산 (초 단위)
+            const deltaTime = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
             
-            update();
+            // 최대 델타 타임 제한 (프레임 드롭 시 게임이 망가지는 것 방지)
+            const limitedDeltaTime = Math.min(deltaTime, 1/30);
+            
+            update(limitedDeltaTime);
             render();
             animationId = requestAnimationFrame(gameLoop);
         }
@@ -492,15 +498,14 @@
         function restartGame() {
             gameState = 'playing';
             score = 0;
+            lastTime = 0;
             scoreElement.textContent = score;
             squirrel.y = canvas.height / 2;
             squirrel.velocity = 0;
             squirrel.rotation = 0;
             trees = [];
-            lastTime = 0; // 타이머 리셋
-            deltaTime = 0;
             gameOverDiv.style.display = 'none';
-            gameLoop();
+            requestAnimationFrame(gameLoop);
         }
 
         // 도움말 토글 함수
@@ -529,7 +534,7 @@
 
         // 게임 시작
         createTree();
-        gameLoop();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
