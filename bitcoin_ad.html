@@ -281,41 +281,40 @@
         <!-- Step 1: Ad Information -->
         <div id="step1" class="payment-step active">
             <div class="bitcoin-header">₿</div>
-            <h1 class="title">비트코인으로 광고하기</h1>
-            <p class="subtitle">게임 플레이어들에게 당신의 메시지를 전하세요!</p>
+            <h1 class="title">Advertise with Bitcoin</h1>
+            <p class="subtitle">Reach game players with your message!</p>
 
             <div class="features">
-                <h3>📢 광고 효과</h3>
+                <h3>📢 Ad Benefits</h3>
                 <ul>
-                    <li>24시간 동안 모든 게임에 표시</li>
-                    <li>게임 하단에 눈에 띄는 위치</li>
-                    <li>클릭 가능한 링크 제공</li>
-                    <li>즉시 게시, 실시간 노출</li>
+                    <li>Display on games</li>
+                    <li>Part of games</li>
+                    <li>Game-time exposure</li>
                 </ul>
             </div>
 
             <div class="payment-amount">
-                <div class="amount-title">결제 금액</div>
-                <div class="btc-amount">0.001 BTC</div>
-                <div class="usd-amount">≈ $50 USD (24시간 광고)</div>
+                <div class="amount-title">Payment Amount</div>
+                <div class="btc-amount">1 BTC</div>
+                <div class="usd-amount">24-hour ad posting</div>
             </div>
 
             <div class="form-group">
-                <label class="form-label">광고 텍스트 *</label>
+                <label class="form-label">Ad Text *</label>
                 <input type="text" id="adText" class="form-input" 
-                       placeholder="예: 새로운 쇼핑몰 오픈! 50% 할인 이벤트" 
+                       placeholder="e.g. New store opening! 50% discount event" 
                        maxlength="100">
-                <small style="color: #666;">최대 100자</small>
+                <small style="color: #666;">Maximum 100 characters</small>
             </div>
 
             <div class="form-group">
-                <label class="form-label">웹사이트 링크 (선택사항)</label>
+                <label class="form-label">Website Link (optional)</label>
                 <input type="url" id="adUrl" class="form-input" 
                        placeholder="https://example.com">
             </div>
 
             <button class="pay-button" onclick="proceedToPayment()">
-                결제 진행하기 →
+                Proceed to Payment →
             </button>
         </div>
 
@@ -360,23 +359,23 @@
         <!-- Step 3: Success -->
         <div id="step3" class="payment-step">
             <div class="success-icon">✅</div>
-            <h2 class="title">결제 완료!</h2>
-            <p class="subtitle">광고가 성공적으로 게시되었습니다</p>
+            <h2 class="title">Payment Complete!</h2>
+            <p class="subtitle">Your ad has been successfully posted</p>
 
             <div class="ad-preview">
-                <h4>📢 광고 미리보기</h4>
+                <h4>📢 Ad Preview</h4>
                 <div id="adPreviewText" style="padding: 15px; background: white; border-radius: 8px; margin: 10px 0; font-weight: bold;"></div>
                 <div id="adPreviewUrl" style="font-size: 14px; color: #f7931a;"></div>
-                <small style="color: #666;">24시간 동안 게임 하단에 표시됩니다</small>
+                <small style="color: #666;">Will be displayed at the bottom of games for 24 hours</small>
             </div>
 
             <div class="status confirmed">
-                🎉 광고가 즉시 게시되었습니다!<br>
-                <small>게임 페이지로 돌아가서 확인해보세요</small>
+                🎉 Your ad has been posted immediately!<br>
+                <small>Return to the game page to see it</small>
             </div>
 
             <button class="pay-button" onclick="startOver()">
-                새 광고 만들기
+                Create New Ad
             </button>
         </div>
     </div>
@@ -388,7 +387,7 @@
         function proceedToPayment() {
             const adText = document.getElementById('adText').value.trim();
             if (!adText) {
-                alert('광고 텍스트를 입력해주세요.');
+                alert('Please enter ad text.');
                 return;
             }
 
@@ -400,13 +399,35 @@
             generatePaymentAddress();
         }
 
-        function generatePaymentAddress() {
-            // 실제 구현시: 백엔드 API 호출
-            // const response = await fetch('/api/bitcoin/payment', {...});
+        async function generatePaymentAddress() {
+            const adText = document.getElementById('adText').value.trim();
             
-            // 데모용 주소 (실제로는 API에서 받아옴)
-            const address = 'bc1q' + Math.random().toString(36).substring(2, 15);
-            document.getElementById('walletAddress').textContent = address;
+            try {
+                const response = await fetch('https://nextjs-boilerplate-byutm7xgj-tigerelmessys-projects.vercel.app/api/bitcoin/payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        adText: adText,
+                        amount: 1
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('walletAddress').textContent = data.address;
+                    window.currentPaymentId = data.payment_id;
+                    return data;
+                } else {
+                    throw new Error(data.error || 'Payment creation failed');
+                }
+            } catch (error) {
+                console.error('Payment creation error:', error);
+                alert('Failed to generate payment address. Please try again.');
+                return null;
+            }
         }
 
         function startCountdown() {
@@ -415,11 +436,11 @@
                 const minutes = Math.floor(timeLeft / 60);
                 const seconds = timeLeft % 60;
                 document.getElementById('countdown').textContent = 
-                    `남은 시간: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    `Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
                 
                 if (timeLeft <= 0) {
                     clearInterval(paymentTimer);
-                    alert('결제 시간이 만료되었습니다. 다시 시도해주세요.');
+                    alert('Payment time has expired. Please try again.');
                     showStep(1);
                     timeLeft = 900;
                 }
@@ -429,7 +450,7 @@
         function copyAddress() {
             const address = document.getElementById('walletAddress').textContent;
             navigator.clipboard.writeText(address).then(() => {
-                alert('✅ 주소가 클립보드에 복사되었습니다!');
+                alert('✅ Address copied to clipboard!');
             }).catch(() => {
                 // 클립보드 API가 지원되지 않는 경우
                 const textArea = document.createElement('textarea');
@@ -438,19 +459,34 @@
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert('✅ 주소가 복사되었습니다!');
+                alert('✅ Address copied!');
             });
         }
 
-        function checkPayment() {
-            // 실제 구현시: 블록체인 API로 결제 확인
-            // const response = await fetch('/api/bitcoin/check-payment/${paymentId}');
-            
-            // 데모용 - 50% 확률로 성공
-            if (Math.random() > 0.3) {
-                paymentConfirmed();
-            } else {
-                alert('🔍 아직 결제가 확인되지 않았습니다.\n잠시 후 다시 확인해주세요.');
+        async function checkPayment() {
+            if (!window.currentPaymentId) {
+                alert('Payment ID not found. Please try again.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://nextjs-boilerplate-byutm7xgj-tigerelmessys-projects.vercel.app/api/bitcoin/check?payment_id=${window.currentPaymentId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.status === 'paid' || data.payment_status === 'paid') {
+                        paymentConfirmed();
+                    } else if (data.status === 'fail') {
+                        alert('❌ Payment failed. Please try again.');
+                    } else {
+                        alert(`🔍 Payment status: ${data.status}\nPlease check again in a moment.`);
+                    }
+                } else {
+                    throw new Error(data.error || 'Payment check failed');
+                }
+            } catch (error) {
+                console.error('Payment check error:', error);
+                alert('🔍 Error occurred while checking payment. Please try again.');
             }
         }
 
