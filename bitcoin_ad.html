@@ -470,7 +470,7 @@
             }
 
             try {
-                const response = await fetch(`https://nextjs-boilerplate-byutm7xgj-tigerelmessys-projects.vercel.app/api/bitcoin/check?payment_id=${window.currentPaymentId}`);
+                const response = await fetch(`https://nextjs-boilerplate-tigerelmessys-projects.vercel.app/api/bitcoin/check?payment_id=${window.currentPaymentId}`);
                 const data = await response.json();
 
                 if (data.success) {
