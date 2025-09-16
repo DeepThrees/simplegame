@@ -287,16 +287,16 @@
             <div class="features">
                 <h3>📢 Ad Benefits</h3>
                 <ul>
-                    <li>Display on all games for 24 hours</li>
-                    <li>Prominent position at bottom of games</li>
-                    <li>Clickable link provided</li>
-                    <li>Instant publishing, real-time exposure</li>
+                    <li>Display on games</li>
+                    <li>Part of games</li>
+                    <li>Game-time exposure</li>
                 </ul>
             </div>
 
             <div class="payment-amount">
                 <div class="amount-title">Payment Amount</div>
                 <div class="btc-amount">1 BTC</div>
+                <div class="usd-amount">In game ad posting</div>
             </div>
 
             <div class="form-group">
@@ -321,39 +321,39 @@
         <!-- Step 2: Payment -->
         <div id="step2" class="payment-step">
             <div class="bitcoin-header">₿</div>
-            <h2 class="title">비트코인 결제</h2>
+            <h2 class="title">Bitcoin Payment</h2>
             
-            <div class="countdown" id="countdown">남은 시간: 14:59</div>
+            <div class="countdown" id="countdown">Time Remaining: 14:59</div>
 
             <div class="qr-code">
                 <div>
-                    QR 코드<br>
-                    <small>(실제 환경에서는<br>결제 QR 코드 표시)</small>
+                    QR Code<br>
+                    <small>(Payment QR code will be<br>displayed in live environment)</small>
                 </div>
             </div>
 
             <div class="wallet-address">
-                <strong>결제 주소:</strong><br>
-                <span id="walletAddress">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</span>
-                <button class="copy-btn" onclick="copyAddress()">주소 복사</button>
+                <strong>Payment Address:</strong><br>
+                <span id="walletAddress">Loading payment address...</span>
+                <button class="copy-btn" onclick="copyAddress()">Copy Address</button>
             </div>
 
             <div class="payment-amount">
                 <div style="font-size: 18px; color: #f7931a; font-weight: bold;">
-                    정확히 0.001 BTC를 전송해주세요
+                    Please send exactly 1 BTC
                 </div>
             </div>
 
             <div class="status pending" id="paymentStatus">
                 <div class="loading"></div>
-                결제 대기 중... 위 주소로 정확한 금액을 전송해주세요.
+                Waiting for payment... Please send the exact amount to the address above.
             </div>
 
             <button class="pay-button" onclick="checkPayment()">
-                결제 확인하기
+                Check Payment
             </button>
 
-            <button class="back-btn" onclick="goBack()">← 뒤로 가기</button>
+            <button class="back-btn" onclick="goBack()">← Go Back</button>
         </div>
 
         <!-- Step 3: Success -->
@@ -403,9 +403,6 @@
             const adText = document.getElementById('adText').value.trim();
             
             try {
-                console.log('Making API call to:', 'https://nextjs-boilerplate-byutm7xgj-tigerelmessys-projects.vercel.app/api/bitcoin/payment');
-                console.log('Request body:', { adText, amount: 1 });
-                
                 const response = await fetch('https://nextjs-boilerplate-byutm7xgj-tigerelmessys-projects.vercel.app/api/bitcoin/payment', {
                     method: 'POST',
                     headers: {
@@ -417,9 +414,7 @@
                     })
                 });
 
-                console.log('Response status:', response.status);
                 const data = await response.json();
-                console.log('Response data:', data);
 
                 if (data.success) {
                     document.getElementById('walletAddress').textContent = data.address;
@@ -430,7 +425,7 @@
                 }
             } catch (error) {
                 console.error('Payment creation error:', error);
-                alert('Failed to generate payment address. Error: ' + error.message + '\nCheck browser console for details.');
+                alert('Failed to generate payment address. Please try again.');
                 return null;
             }
         }
