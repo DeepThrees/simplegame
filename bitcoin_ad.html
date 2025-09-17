@@ -429,7 +429,8 @@
             adText: "entry.475647717",      // 광고 텍스트 필드 ID
             adUrl: "entry.807713425",       // 웹사이트 URL 필드 ID  
             email: "entry.1579641229",      // 이메일 필드 ID
-            senderAddress: "entry.2045431809"  // 발신 주소 필드 ID
+            senderAddress: "entry.2045431809",  // 발신 주소 필드 ID
+            txHash: "entry.683210418"       // 거래해시 필드 ID
         };
 
         let paymentTimer;
@@ -458,22 +459,13 @@
                 return;
             }
 
-            // Google Forms에 데이터 제출
-            submitToGoogleForms().then(() => {
-                // Step 2로 이동
-                showStep(2);
-                startCountdown();
-                generatePaymentAddress();
-            }).catch((error) => {
-                console.error('Forms submission error:', error);
-                // 에러가 있어도 결제 페이지로 진행
-                showStep(2);
-                startCountdown();
-                generatePaymentAddress();
-            });
+            // Step 2로 이동 (Forms 제출은 나중에)
+            showStep(2);
+            startCountdown();
+            generatePaymentAddress();
         }
 
-        async function submitToGoogleForms() {
+        async function submitToGoogleForms(txHash = '') {
             const adText = document.getElementById('adText').value.trim();
             const adUrl = document.getElementById('adUrl').value.trim();
             const userEmail = document.getElementById('userEmail').value.trim();
@@ -485,6 +477,7 @@
             formData.append(FORM_FIELDS.adUrl, adUrl);
             formData.append(FORM_FIELDS.email, userEmail);
             formData.append(FORM_FIELDS.senderAddress, senderAddress);
+            formData.append(FORM_FIELDS.txHash, txHash);
 
             try {
                 const iframe = document.createElement('iframe');
@@ -512,7 +505,7 @@
                     document.body.removeChild(iframe);
                 }, 1000);
                 
-                console.log('Submitted to Google Forms:', {adText, adUrl, userEmail, senderAddress});
+                console.log('Submitted to Google Forms:', {adText, adUrl, userEmail, senderAddress, txHash});
                 
             } catch (error) {
                 console.error('Google Forms submission failed:', error);
@@ -525,18 +518,31 @@
         }
 
         function confirmPayment() {
-            // 추가 정보 수집
+            // 거래해시 필수 입력
             const txHash = document.getElementById('txHash').value.trim();
+            
+            if (!txHash) {
+                alert('Please enter the transaction hash.');
+                return;
+            }
+
+            // 추가 정보 수집
             const notes = document.getElementById('additionalNotes').value.trim();
             
-            // 확인 정보 저장
-            localStorage.setItem('confirmationData', JSON.stringify({
-                txHash: txHash,
-                notes: notes,
-                confirmTime: new Date().toISOString()
-            }));
+            // 모든 정보와 함께 Google Forms에 제출
+            submitToGoogleForms(txHash).then(() => {
+                // 확인 정보 저장
+                localStorage.setItem('confirmationData', JSON.stringify({
+                    txHash: txHash,
+                    notes: notes,
+                    confirmTime: new Date().toISOString()
+                }));
 
-            paymentConfirmed();
+                paymentConfirmed();
+            }).catch((error) => {
+                console.error('Forms submission error:', error);
+                alert('There was an error submitting your information. Please try again.');
+            });
         }
 
         function goBackToPayment() {
