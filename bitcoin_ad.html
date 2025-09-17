@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Ad Payment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .bitcoin-header {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .payment-amount {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 3px solid #f7931a;
+        }
+
+        .amount-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .btc-amount {
+            font-size: 32px;
+            color: #f7931a;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .usd-amount {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #f7931a;
+        }
+
+        .pay-button {
+            background: linear-gradient(45deg, #f7931a, #ffb347);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .pay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(247, 147, 26, 0.3);
+        }
+
+        .pay-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Payment Steps */
+        .payment-step {
+            display: none;
+        }
+
+        .payment-step.active {
+            display: block;
+        }
+
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            border-radius: 15px;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .wallet-address {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.confirmed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #f7931a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .countdown {
+            font-size: 20px;
+            color: #f7931a;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .success-icon {
+            font-size: 64px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .ad-preview {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #f7931a;
+        }
+
+        .features {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .features h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            padding: 8px 0;
+            color: #555;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .features li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Step 1: Ad Information -->
+        <div id="step1" class="payment-step active">
+            <div class="bitcoin-header">₿</div>
+            <h1 class="title">Advertise with Bitcoin</h1>
+            <p class="subtitle">Reach game players with your message!</p>
+
+            <div class="features">
+                <h3>📢 Ad Benefits</h3>
+                <ul>
+                    <li>Display on games</li>
+                    <li>Part of games</li>
+                    <li>Game-time exposure</li>
+                </ul>
+            </div>
+
+            <div class="payment-amount">
+                <div class="amount-title">Payment Amount</div>
+                <div class="btc-amount">1 BTC</div>
+                <div class="usd-amount">In game ad posting</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Ad Text *</label>
+                <input type="text" id="adText" class="form-input" 
+                       placeholder="e.g. New store opening! 50% discount event" 
+                       maxlength="100">
+                <small style="color: #666;">Maximum 100 characters</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Website Link (optional)</label>
+                <input type="url" id="adUrl" class="form-input" 
+                       placeholder="https://example.com">
+            </div>
+
+            <button class="pay-button" onclick="proceedToPayment()">
+                Proceed to Payment →
+            </button>
+        </div>
+
+        <!-- Step 2: Payment -->
+        <div id="step2" class="payment-step">
+            <div class="bitcoin-header">₿</div>
+            <h2 class="title">Bitcoin Payment</h2>
+            
+            <div class="countdown" id="countdown">Time Remaining: 14:59</div>
+
+            <div class="qr-code">
+                <div>
+                    QR Code<br>
+                    <small>(Payment QR code will be<br>displayed in live environment)</small>
+                </div>
+            </div>
+
+            <div class="wallet-address">
+                <strong>Payment Address:</strong><br>
+                <span id="walletAddress">Loading payment address...</span>
+                <button class="copy-btn" onclick="copyAddress()">Copy Address</button>
+            </div>
+
+            <div class="payment-amount">
+                <div style="font-size: 18px; color: #f7931a; font-weight: bold;">
+                    Please send exactly 1 BTC
+                </div>
+            </div>
+
+            <div class="status pending" id="paymentStatus">
+                <div class="loading"></div>
+                Waiting for payment... Please send the exact amount to the address above.
+            </div>
+
+            <button class="pay-button" onclick="checkPayment()">
+                Check Payment
+            </button>
+
+            <button class="back-btn" onclick="goBack()">← Go Back</button>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div id="step3" class="payment-step">
+            <div class="success-icon">✅</div>
+            <h2 class="title">Payment Complete!</h2>
+            <p class="subtitle">Your ad has been successfully posted</p>
+
+            <div class="ad-preview">
+                <h4>📢 Ad Preview</h4>
+                <div id="adPreviewText" style="padding: 15px; background: white; border-radius: 8px; margin: 10px 0; font-weight: bold;"></div>
+                <div id="adPreviewUrl" style="font-size: 14px; color: #f7931a;"></div>
+                <small style="color: #666;">Will be displayed at the bottom of games for 24 hours</small>
+            </div>
+
+            <div class="status confirmed">
+                🎉 Your ad has been posted immediately!<br>
+                <small>Return to the game page to see it</small>
+            </div>
+
+            <button class="pay-button" onclick="startOver()">
+                Create New Ad
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let paymentTimer;
+        let timeLeft = 900; // 15 minutes
+
+        // 업비트 비트코인 고정 주소 (여기에 실제 업비트 주소 입력)
+        const UPBIT_BTC_ADDRESS = "34qtHzLccGB5Nnyv4nAPYJZN9zJmxxe4HN"; // 실제 업비트 주소로 변경하세요
+
+        function proceedToPayment() {
+            const adText = document.getElementById('adText').value.trim();
+            if (!adText) {
+                alert('Please enter ad text.');
+                return;
+            }
+
+            // Step 2로 이동
+            showStep(2);
+            startCountdown();
+            
+            // 고정 주소 표시
+            generatePaymentAddress();
+        }
+
+        function generatePaymentAddress() {
+            // 고정 업비트 주소 사용
+            document.getElementById('walletAddress').textContent = UPBIT_BTC_ADDRESS;
+            
+            // 광고 정보를 로컬 스토리지에 임시 저장
+            const adData = {
+                text: document.getElementById('adText').value.trim(),
+                url: document.getElementById('adUrl').value.trim(),
+                timestamp: new Date().toISOString(),
+                address: UPBIT_BTC_ADDRESS
+            };
+            
+            localStorage.setItem('pendingAd', JSON.stringify(adData));
+            console.log('Ad data saved for manual processing:', adData);
+        }
+
+        function startCountdown() {
+            paymentTimer = setInterval(() => {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                document.getElementById('countdown').textContent = 
+                    `Time Remaining: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(paymentTimer);
+                    alert('Payment time has expired. Please try again.');
+                    showStep(1);
+                    timeLeft = 900;
+                }
+            }, 1000);
+        }
+
+        function copyAddress() {
+            const address = document.getElementById('walletAddress').textContent;
+            navigator.clipboard.writeText(address).then(() => {
+                alert('✅ Address copied to clipboard!');
+            }).catch(() => {
+                // 클립보드 API가 지원되지 않는 경우
+                const textArea = document.createElement('textarea');
+                textArea.value = address;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Address copied!');
+            });
+        }
+
+        function checkPayment() {
+            // 수동 확인을 위한 안내
+            const result = confirm(
+                '🔍 Payment Check\n\n' +
+                'This is a manual verification system.\n' +
+                'Have you sent exactly 1 BTC to the address above?\n\n' +
+                'Click "OK" if payment is completed,\n' +
+                'Click "Cancel" to continue waiting.'
+            );
+
+            if (result) {
+                // 사용자가 결제 완료했다고 확인
+                paymentConfirmed();
+            } else {
+                alert('💡 Please complete the payment and try again.');
+            }
+        }
+
+        function paymentConfirmed() {
+            clearInterval(paymentTimer);
+            
+            // 광고 미리보기 업데이트
+            const adText = document.getElementById('adText').value.trim();
+            const adUrl = document.getElementById('adUrl').value.trim();
+            
+            document.getElementById('adPreviewText').textContent = adText;
+            if (adUrl) {
+                document.getElementById('adPreviewUrl').innerHTML = `<a href="${adUrl}" target="_blank">🔗 ${adUrl}</a>`;
+            }
+            
+            showStep(3);
+            
+            // 광고를 로컬에 저장 (수동 처리용)
+            saveAdToServer(adText, adUrl);
+        }
+
+        function saveAdToServer(text, url) {
+            // 수동 처리를 위한 광고 정보 저장
+            const ad = {
+                id: Date.now(),
+                text: text,
+                url: url,
+                timestamp: new Date(),
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                status: 'pending_manual_verification'
+            };
+            
+            let ads = JSON.parse(localStorage.getItem('gameAds') || '[]');
+            ads.push(ad);
+            localStorage.setItem('gameAds', JSON.stringify(ads));
+            
+            // 펜딩 광고 정보 제거
+            localStorage.removeItem('pendingAd');
+            
+            console.log('Ad saved for manual verification:', ad);
+        }
+
+        function showStep(stepNumber) {
+            // 모든 스텝 숨기기
+            document.querySelectorAll('.payment-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // 선택된 스텝 보이기
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+        }
+
+        function goBack() {
+            if (paymentTimer) {
+                clearInterval(paymentTimer);
+            }
+            timeLeft = 900;
+            showStep(1);
+        }
+
+        function startOver() {
+            // 폼 초기화
+            document.getElementById('adText').value = '';
+            document.getElementById('adUrl').value = '';
+            showStep(1);
+        }
+
+        // 페이지 로드시 만료된 광고 정리
+        window.addEventListener('load', () => {
+            cleanExpiredAds();
+        });
+
+        function cleanExpiredAds() {
+            let ads = JSON.parse(localStorage.getItem('gameAds') || '[]');
+            const now = new Date();
+            ads = ads.filter(ad => new Date(ad.expiresAt) > now);
+            localStorage.setItem('gameAds', JSON.stringify(ads));
+        }
+    </script>
+</body>
+</html>
