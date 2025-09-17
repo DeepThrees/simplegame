@@ -519,16 +519,12 @@
                 alert('Please enter the transaction hash.');
                 return;
             }
-
-            // 추가 정보 수집
-            const notes = document.getElementById('additionalNotes').value.trim();
             
             // 모든 정보와 함께 Google Forms에 제출
             submitToGoogleForms(txHash).then(() => {
                 // 확인 정보 저장
                 localStorage.setItem('confirmationData', JSON.stringify({
                     txHash: txHash,
-                    notes: notes,
                     confirmTime: new Date().toISOString()
                 }));
 
