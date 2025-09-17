@@ -393,13 +393,12 @@
         let paymentTimer;
         let timeLeft = 900; // 15 minutes
 
-        // Google Forms 설정 (실제 Forms ID와 Field ID로 교체 필요)
-        const GOOGLE_FORMS_URL = "https://docs.google.com/forms/d/e/YOUR_FORM_ID/formResponse";
+        // Google Forms 설정
+        const GOOGLE_FORMS_URL = "https://docs.google.com/forms/u/0/d/1R9HS2CIQE8BV-CsNhQvsV9Krgt6UpmoEjkqs8-_RGdw/formResponse";
         const FORM_FIELDS = {
-            adText: "entry.123456789",      // 광고 텍스트 필드 ID
-            adUrl: "entry.987654321",       // 웹사이트 URL 필드 ID  
-            email: "entry.555666777",       // 이메일 필드 ID
-            timestamp: "entry.444555666"    // 타임스탬프 필드 ID
+            adText: "entry.475647717",      // 광고 텍스트 필드 ID
+            adUrl: "entry.807713425",       // 웹사이트 URL 필드 ID  
+            email: "entry.1579641229"       // 이메일 필드 ID
         };
 
         // 업비트 비트코인 고정 주소 (여기에 실제 업비트 주소 입력)
@@ -438,14 +437,12 @@
             const adText = document.getElementById('adText').value.trim();
             const adUrl = document.getElementById('adUrl').value.trim();
             const userEmail = document.getElementById('userEmail').value.trim();
-            const timestamp = new Date().toISOString();
 
             // Google Forms 제출을 위한 FormData 생성
             const formData = new FormData();
             formData.append(FORM_FIELDS.adText, adText);
             formData.append(FORM_FIELDS.adUrl, adUrl);
             formData.append(FORM_FIELDS.email, userEmail);
-            formData.append(FORM_FIELDS.timestamp, timestamp);
 
             try {
                 // Google Forms에 제출 (CORS 때문에 fetch는 실패할 수 있음)
@@ -477,7 +474,7 @@
                     document.body.removeChild(iframe);
                 }, 1000);
                 
-                console.log('Submitted to Google Forms:', {adText, adUrl, userEmail, timestamp});
+                console.log('Submitted to Google Forms:', {adText, adUrl, userEmail});
                 
             } catch (error) {
                 console.error('Google Forms submission failed:', error);
