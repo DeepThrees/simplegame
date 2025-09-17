@@ -344,12 +344,6 @@
             
             <div class="countdown" id="countdown">Time Remaining: 14:59</div>
 
-            <div class="payment-amount" style="background: #fff3cd; border: 3px solid #f7931a; margin: 20px 0;">
-                <div style="font-size: 16px; color: #856404; margin-bottom: 10px;">📋 <strong>Payment ID (중요!)</strong></div>
-                <div id="uniqueId" style="font-size: 24px; color: #f7931a; font-weight: bold; font-family: monospace;"></div>
-                <small style="color: #856404;">비트코인 전송 시 이 ID를 메모란에 입력해주세요</small>
-            </div>
-
             <div class="qr-code">
                 <div id="qrcode"></div>
             </div>
@@ -385,12 +379,6 @@
             <p class="subtitle">Please confirm your payment details</p>
 
             <div class="form-group">
-                <label class="form-label">Payment ID (from previous step) *</label>
-                <input type="text" id="confirmId" class="form-input" 
-                       placeholder="Enter the Payment ID shown above">
-            </div>
-
-            <div class="form-group">
                 <label class="form-label">Transaction Hash (optional)</label>
                 <input type="text" id="txHash" class="form-input" 
                        placeholder="Bitcoin transaction hash (if available)">
@@ -420,7 +408,7 @@
                 <h4>📢 Ad Preview</h4>
                 <div id="adPreviewText" style="padding: 15px; background: white; border-radius: 8px; margin: 10px 0; font-weight: bold;"></div>
                 <div id="adPreviewUrl" style="font-size: 14px; color: #f7931a;"></div>
-                <small style="color: #666;">Will be displayed at the games like it is part of the game!</small>
+                <small style="color: #666;">Will be displayed in the games like it is part of the games!</small>
             </div>
 
             <div class="status confirmed">
@@ -444,7 +432,6 @@
             senderAddress: "entry.2045431809"  // 발신 주소 필드 ID
         };
 
-        let currentUniqueId = null;
         let paymentTimer;
         let timeLeft = 900; // 15 minutes
 
@@ -471,9 +458,6 @@
                 return;
             }
 
-            // 고유 ID 생성
-            currentUniqueId = generateUniqueId();
-
             // Google Forms에 데이터 제출
             submitToGoogleForms().then(() => {
                 // Step 2로 이동
@@ -489,12 +473,6 @@
             });
         }
 
-        function generateUniqueId() {
-            const timestamp = Date.now().toString().slice(-6);
-            const random = Math.random().toString(36).substr(2, 4).toUpperCase();
-            return `AD${timestamp}${random}`;
-        }
-
         async function submitToGoogleForms() {
             const adText = document.getElementById('adText').value.trim();
             const adUrl = document.getElementById('adUrl').value.trim();
@@ -503,7 +481,7 @@
 
             // Google Forms 제출을 위한 FormData 생성
             const formData = new FormData();
-            formData.append(FORM_FIELDS.adText, `[${currentUniqueId}] ${adText}`);
+            formData.append(FORM_FIELDS.adText, adText);
             formData.append(FORM_FIELDS.adUrl, adUrl);
             formData.append(FORM_FIELDS.email, userEmail);
             formData.append(FORM_FIELDS.senderAddress, senderAddress);
@@ -534,7 +512,7 @@
                     document.body.removeChild(iframe);
                 }, 1000);
                 
-                console.log('Submitted to Google Forms:', {adText: `[${currentUniqueId}] ${adText}`, adUrl, userEmail, senderAddress});
+                console.log('Submitted to Google Forms:', {adText, adUrl, userEmail, senderAddress});
                 
             } catch (error) {
                 console.error('Google Forms submission failed:', error);
@@ -547,25 +525,12 @@
         }
 
         function confirmPayment() {
-            const enteredId = document.getElementById('confirmId').value.trim();
-            
-            if (!enteredId) {
-                alert('Please enter the Payment ID.');
-                return;
-            }
-            
-            if (enteredId !== currentUniqueId) {
-                alert('Payment ID does not match. Please check and try again.');
-                return;
-            }
-
             // 추가 정보 수집
             const txHash = document.getElementById('txHash').value.trim();
             const notes = document.getElementById('additionalNotes').value.trim();
             
             // 확인 정보 저장
             localStorage.setItem('confirmationData', JSON.stringify({
-                uniqueId: currentUniqueId,
                 txHash: txHash,
                 notes: notes,
                 confirmTime: new Date().toISOString()
@@ -582,9 +547,6 @@
             // 고정 업비트 주소 사용
             document.getElementById('walletAddress').textContent = UPBIT_BTC_ADDRESS;
             
-            // 고유 ID 표시
-            document.getElementById('uniqueId').textContent = currentUniqueId;
-            
             // QR 코드 생성
             document.getElementById('qrcode').innerHTML = '';
             new QRCode(document.getElementById('qrcode'), {
@@ -598,7 +560,6 @@
             
             // 광고 정보를 로컬 스토리지에 임시 저장
             const adData = {
-                uniqueId: currentUniqueId,
                 text: document.getElementById('adText').value.trim(),
                 url: document.getElementById('adUrl').value.trim(),
                 email: document.getElementById('userEmail').value.trim(),
@@ -666,7 +627,6 @@
             // 수동 처리를 위한 광고 정보 저장
             const ad = {
                 id: Date.now(),
-                uniqueId: currentUniqueId,
                 text: text,
                 url: url,
                 email: document.getElementById('userEmail').value.trim(),
