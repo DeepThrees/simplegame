@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다람쥐 도토리 배구</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            border: 3px solid #8B4513;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #90EE90 70%, #228B22 100%);
+            outline: none;
+        }
+        
+        #gameInfo {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+            background: rgba(200, 200, 200, 1);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameInfo">
+        <span id="leftScore">0</span> : <span id="rightScore">0</span>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
+    
+    <div id="controls">
+        <div id="desktopControls">PC: ←→ 이동, ↑/스페이스 점프 | 모바일: 터치로 이동, 탭으로 점프</div>
+        <div class="control-buttons">
+            <button class="control-btn" id="leftBtn">←</button>
+            <button class="control-btn" id="jumpBtn">점프</button>
+            <button class="control-btn" id="upBtn">↑</button>
+            <button class="control-btn" id="rightBtn">→</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 게임 상태
+        let gameState = {
+            leftScore: 0,
+            rightScore: 0,
+            isGameRunning: true
+        };
+        
+        let lastTime = 0;
+        
+        // 디바이스 감지
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // 플레이어
+        class Player {
+            constructor(x, y, isLeft = true) {
+                this.x = x;
+                this.y = y;
+                this.width = 55;
+                this.height = 55;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.isOnGround = false;
+                this.isLeft = isLeft;
+                this.color = isLeft ? '#D2691E' : '#8B4513';
+            }
+            
+            update(deltaTime) {
+                // 중력 적용 (시간 기반)
+                this.velocityY += 1200 * deltaTime;
+                
+                // 위치 업데이트
+                this.x += this.velocityX * deltaTime;
+                this.y += this.velocityY * deltaTime;
+                
+                // 바닥 충돌
+                const groundY = canvas.height - this.height - 20;
+                if (this.y >= groundY) {
+                    this.y = groundY;
+                    this.velocityY = 0;
+                    this.isOnGround = true;
+                } else {
+                    this.isOnGround = false;
+                }
+                
+                // 좌우 경계 체크
+                const leftBound = this.isLeft ? 0 : canvas.width / 2 + 10;
+                const rightBound = this.isLeft ? canvas.width / 2 - 10 : canvas.width - this.width;
+                
+                if (this.x < leftBound) this.x = leftBound;
+                if (this.x > rightBound) this.x = rightBound;
+                
+                // 마찰 (시간 기반)
+                this.velocityX *= Math.pow(0.8, deltaTime * 60);
+            }
+            
+            moveLeft() {
+                this.velocityX = -300;
+            }
+            
+            moveRight() {
+                this.velocityX = 300;
+            }
+            
+            jump() {
+                if (this.isOnGround) {
+                    this.velocityY = -600;
+                    this.isOnGround = false;
+                }
+            }
+            
+            draw() {
+                // 다람쥐 꼬리 (뒤에 그리기)
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                
+                const tailX = this.isLeft ? this.x - 10 : this.x + this.width + 10;
+                ctx.beginPath();
+                ctx.ellipse(tailX, this.y + 5, 15, 25, this.isLeft ? -0.3 : 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 몸체
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 작은 귀
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 - 8, this.y + 12, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 + 8, this.y + 12, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 눈
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 - 6, this.y + this.height/2 - 3, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 + 6, this.y + this.height/2 - 3, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 코
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2 + 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // 공
+        class Ball {
+            constructor() {
+                this.reset();
+                this.radius = 18;
+                this.color = '#8B4513';
+            }
+            
+            reset() {
+                this.x = canvas.width / 2;
+                this.y = 100;
+                this.velocityX = Math.random() > 0.5 ? 180 : -180;
+                this.velocityY = 0;
+            }
+            
+            update(deltaTime) {
+                // 중력
+                this.velocityY += 800 * deltaTime;
+                
+                // 위치 업데이트
+                this.x += this.velocityX * deltaTime;
+                this.y += this.velocityY * deltaTime;
+                
+                // 바닥 충돌
+                if (this.y + this.radius >= canvas.height - 20) {
+                    this.y = canvas.height - 20 - this.radius;
+                    this.velocityY *= -0.7;
+                    this.velocityX *= Math.pow(0.9, deltaTime * 60);
+                    
+                    // 득점 체크
+                    if (this.x < canvas.width / 2) {
+                        gameState.rightScore++;
+                        this.reset();
+                    } else {
+                        gameState.leftScore++;
+                        this.reset();
+                    }
+                    updateScore();
+                }
+                
+                // 좌우 벽 충돌
+                if (this.x - this.radius <= 0 || this.x + this.radius >= canvas.width) {
+                    this.velocityX *= -0.8;
+                    this.x = this.x - this.radius <= 0 ? this.radius : canvas.width - this.radius;
+                }
+                
+                // 천장 충돌
+                if (this.y - this.radius <= 0) {
+                    this.y = this.radius;
+                    this.velocityY *= -0.8;
+                }
+                
+                // 네트 충돌
+                const netX = canvas.width / 2;
+                const netTop = canvas.height - 120;
+                if (Math.abs(this.x - netX) < this.radius + 5 && this.y + this.radius > netTop) {
+                    if (this.x < netX) {
+                        this.x = netX - this.radius - 5;
+                    } else {
+                        this.x = netX + this.radius + 5;
+                    }
+                    this.velocityX *= -0.8;
+                }
+            }
+            
+            checkPlayerCollision(player) {
+                const dx = this.x - (player.x + player.width / 2);
+                const dy = this.y - (player.y + player.height / 2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.radius + 20) {
+                    // 충돌 각도 계산
+                    const angle = Math.atan2(dy, dx);
+                    const power = 480;
+                    
+                    this.velocityX = Math.cos(angle) * power;
+                    this.velocityY = Math.sin(angle) * power - 120;
+                    
+                    // 공을 플레이어에서 밀어내기
+                    this.x = player.x + player.width / 2 + Math.cos(angle) * (this.radius + 25);
+                    this.y = player.y + player.height / 2 + Math.sin(angle) * (this.radius + 25);
+                }
+            }
+            
+            draw() {
+                // 도토리 몸체 (타원형)
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.radius * 0.8, this.radius, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                // 도토리 모자 (위쪽 캡)
+                ctx.fillStyle = '#654321';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y - this.radius * 0.3, this.radius * 0.6, this.radius * 0.4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 도토리 줄무늬
+                ctx.strokeStyle = '#5D4037';
+                ctx.lineWidth = 1;
+                for (let i = -3; i <= 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - this.radius * 0.5, this.y - this.radius * 0.3 + i * 3);
+                    ctx.lineTo(this.x + this.radius * 0.5, this.y - this.radius * 0.3 + i * 3);
+                    ctx.stroke();
+                }
+                
+                // 하이라이트
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x - 6, this.y - 6, this.radius / 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // 게임 오브젝트 생성
+        const leftPlayer = new Player(100, canvas.height - 75, true);
+        const rightPlayer = new Player(canvas.width - 155, canvas.height - 75, false);
+        const ball = new Ball();
+        
+        // 컨트롤
+        const keys = {};
+        let touchStartX = 0;
+        let touchActive = false;
+        let leftPressed = false;
+        let rightPressed = false;
+        let leftInterval, rightInterval;
+        
+        // 버튼 컨트롤 (마우스)
+        document.getElementById('leftBtn').addEventListener('mousedown', () => {
+            leftPressed = true;
+            leftInterval = setInterval(() => {
+                if (leftPressed) leftPlayer.moveLeft();
+            }, 16);
+        });
+        
+        document.getElementById('leftBtn').addEventListener('mouseup', () => {
+            leftPressed = false;
+            clearInterval(leftInterval);
+        });
+        
+        document.getElementById('leftBtn').addEventListener('mouseleave', () => {
+            leftPressed = false;
+            clearInterval(leftInterval);
+        });
+        
+        document.getElementById('rightBtn').addEventListener('mousedown', () => {
+            rightPressed = true;
+            rightInterval = setInterval(() => {
+                if (rightPressed) leftPlayer.moveRight();
+            }, 16);
+        });
+        
+        document.getElementById('rightBtn').addEventListener('mouseup', () => {
+            rightPressed = false;
+            clearInterval(rightInterval);
+        });
+        
+        document.getElementById('rightBtn').addEventListener('mouseleave', () => {
+            rightPressed = false;
+            clearInterval(rightInterval);
+        });
+        
+        document.getElementById('jumpBtn').addEventListener('click', () => leftPlayer.jump());
+        document.getElementById('upBtn').addEventListener('click', () => leftPlayer.jump());
+        
+        // 터치 지원 (모바일)
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            leftPressed = true;
+            leftInterval = setInterval(() => {
+                if (leftPressed) leftPlayer.moveLeft();
+            }, 16);
+        });
+        
+        document.getElementById('leftBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            leftPressed = false;
+            clearInterval(leftInterval);
+        });
+        
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            rightPressed = true;
+            rightInterval = setInterval(() => {
+                if (rightPressed) leftPlayer.moveRight();
+            }, 16);
+        });
+        
+        document.getElementById('rightBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            rightPressed = false;
+            clearInterval(rightInterval);
+        });
+        
+        document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            leftPlayer.jump();
+        });
+        
+        document.getElementById('upBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            leftPlayer.jump();
+        });
+        
+        // 키보드 이벤트
+        function handleKeyDown(e) {
+            keys[e.key] = true;
+            keys[e.code] = true;
+            
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                leftPlayer.moveLeft();
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                leftPlayer.moveRight();
+            }
+            if (e.key === ' ' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
+                leftPlayer.jump();
+            }
+            e.preventDefault();
+        }
+        
+        function handleKeyUp(e) {
+            keys[e.key] = false;
+            keys[e.code] = false;
+            e.preventDefault();
+        }
+        
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        canvas.addEventListener('keydown', handleKeyDown);
+        canvas.addEventListener('keyup', handleKeyUp);
+        
+        canvas.setAttribute('tabindex', '0');
+        canvas.addEventListener('click', () => {
+            canvas.focus();
+        });
+        
+        window.addEventListener('load', () => {
+            canvas.focus();
+        });
+        
+        // 터치 이벤트
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            touchStartX = touch.clientX - rect.left;
+            touchActive = true;
+            
+            leftPlayer.jump();
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!touchActive) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            
+            const deltaX = touchX - touchStartX;
+            if (Math.abs(deltaX) > 10) {
+                if (deltaX > 0) {
+                    leftPlayer.moveRight();
+                } else {
+                    leftPlayer.moveLeft();
+                }
+                touchStartX = touchX;
+            }
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchActive = false;
+        });
+        
+        // 점수 업데이트
+        function updateScore() {
+            document.getElementById('leftScore').textContent = gameState.leftScore;
+            document.getElementById('rightScore').textContent = gameState.rightScore;
+        }
+        
+        // 게임 그리기
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 네트 그리기
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height - 120);
+            ctx.lineTo(canvas.width / 2, canvas.height - 20);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(canvas.width / 2 - 3, canvas.height - 120, 6, 8);
+            
+            // 코트 라인
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 20);
+            ctx.lineTo(canvas.width, canvas.height - 20);
+            ctx.stroke();
+            
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height - 20);
+            ctx.lineTo(canvas.width / 2, canvas.height - 120);
+            ctx.stroke();
+            
+            // 게임 오브젝트 그리기
+            leftPlayer.draw();
+            rightPlayer.draw();
+            ball.draw();
+        }
+        
+        // 게임 업데이트
+        function update(deltaTime) {
+            if (!gameState.isGameRunning) return;
+            
+            // 플레이어 컨트롤 (PC)
+            if (!isMobile) {
+                if (keys['ArrowLeft'] || keys['a'] || keys['A'] || leftPressed) {
+                    leftPlayer.moveLeft();
+                }
+                if (keys['ArrowRight'] || keys['d'] || keys['D'] || rightPressed) {
+                    leftPlayer.moveRight();
+                }
+                if (keys[' '] || keys['w'] || keys['W'] || keys['ArrowUp']) {
+                    leftPlayer.jump();
+                }
+            }
+            
+            // AI
+            const ballDistance = Math.abs(rightPlayer.x - ball.x);
+            if (ballDistance > 20) {
+                if (ball.x > rightPlayer.x + 20) {
+                    rightPlayer.moveRight();
+                } else if (ball.x < rightPlayer.x - 20) {
+                    rightPlayer.moveLeft();
+                }
+            }
+            
+            if (ball.y > rightPlayer.y && ball.velocityY > 0 && ballDistance < 80) {
+                rightPlayer.jump();
+            }
+            
+            // 오브젝트 업데이트
+            leftPlayer.update(deltaTime);
+            rightPlayer.update(deltaTime);
+            ball.update(deltaTime);
+            
+            // 충돌 체크
+            ball.checkPlayerCollision(leftPlayer);
+            ball.checkPlayerCollision(rightPlayer);
+        }
+        
+        // 게임 루프
+        function gameLoop(currentTime) {
+            if (lastTime === 0) {
+                lastTime = currentTime;
+            }
+            
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            const limitedDeltaTime = Math.min(deltaTime, 1/60);
+            
+            update(limitedDeltaTime);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 캔버스 크기 조정
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(window.innerWidth - 20, 800);
+            const maxHeight = Math.min(window.innerHeight - 100, 400);
+            
+            canvas.style.width = maxWidth + 'px';
+            canvas.style.height = (maxWidth * 0.5) + 'px';
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // 게임 시작
+        updateScore();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
