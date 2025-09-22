@@ -343,73 +343,54 @@
         let touchActive = false;
         let leftPressed = false;
         let rightPressed = false;
-        let leftInterval, rightInterval;
         
-        // 버튼 컨트롤 (마우스)
+        // 버튼 컨트롤 (상태만 저장)
         document.getElementById('leftBtn').addEventListener('mousedown', () => {
             leftPressed = true;
-            leftInterval = setInterval(() => {
-                if (leftPressed) leftPlayer.moveLeft();
-            }, 16);
         });
         
         document.getElementById('leftBtn').addEventListener('mouseup', () => {
             leftPressed = false;
-            clearInterval(leftInterval);
         });
         
         document.getElementById('leftBtn').addEventListener('mouseleave', () => {
             leftPressed = false;
-            clearInterval(leftInterval);
         });
         
         document.getElementById('rightBtn').addEventListener('mousedown', () => {
             rightPressed = true;
-            rightInterval = setInterval(() => {
-                if (rightPressed) leftPlayer.moveRight();
-            }, 16);
         });
         
         document.getElementById('rightBtn').addEventListener('mouseup', () => {
             rightPressed = false;
-            clearInterval(rightInterval);
         });
         
         document.getElementById('rightBtn').addEventListener('mouseleave', () => {
             rightPressed = false;
-            clearInterval(rightInterval);
         });
         
         document.getElementById('jumpBtn').addEventListener('click', () => leftPlayer.jump());
         document.getElementById('upBtn').addEventListener('click', () => leftPlayer.jump());
         
-        // 터치 지원 (모바일)
+        // 터치 지원 (상태만 저장)
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
             leftPressed = true;
-            leftInterval = setInterval(() => {
-                if (leftPressed) leftPlayer.moveLeft();
-            }, 16);
         });
         
         document.getElementById('leftBtn').addEventListener('touchend', (e) => {
             e.preventDefault();
             leftPressed = false;
-            clearInterval(leftInterval);
         });
         
         document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
             rightPressed = true;
-            rightInterval = setInterval(() => {
-                if (rightPressed) leftPlayer.moveRight();
-            }, 16);
         });
         
         document.getElementById('rightBtn').addEventListener('touchend', (e) => {
             e.preventDefault();
             rightPressed = false;
-            clearInterval(rightInterval);
         });
         
         document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
