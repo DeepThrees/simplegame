@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Games</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #faf7f2 0%, #fcf4e8 50%, #faf7f2 100%);
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3px;
+        }
+        
+        .game-frame {
+            width: 100%;
+            max-width: 800px;
+            height: calc(100vh - 40px);
+            max-height: none;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: white;
+        }
+        
+        .controls {
+            margin-top: 3px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #ff8c42, #ffab00);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .game-info {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .game-list {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 180px;
+        }
+        
+        .game-list h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .game-list button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+            position: relative;
+        }
+        
+        .game-list button:hover {
+            background: #e0e0e0;
+        }
+        
+        .game-list button.active {
+            background: #f7931e;
+            color: white;
+        }
+
+        .bitcoin-btn {
+            background: linear-gradient(45deg, #f7931a, #ffb347) !important;
+            color: white !important;
+        }
+
+        .bitcoin-btn:hover {
+            background: linear-gradient(45deg, #e8860b, #ff9500) !important;
+        }
+        
+        .premium-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f7931a;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .payment-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .payment-modal {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .payment-modal h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .payment-modal .amount {
+            font-size: 36px;
+            color: #f7931a;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .payment-modal button {
+            margin: 10px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .pay-btn {
+            background: #f7931a;
+            color: white;
+        }
+        
+        .pay-btn:hover {
+            background: #e8860b;
+        }
+        
+        .cancel-btn {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .cancel-btn:hover {
+            background: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <iframe id="gameFrame" class="game-frame" src=""></iframe>
+        
+        <div class="controls">
+            <button class="btn" onclick="previousGame()">◀ Previous Game</button>
+            <div class="game-info">
+                <span id="gameTitle">게임을 선택하세요</span>
+                <span id="gameCounter"></span>
+            </div>
+            <button class="btn" onclick="nextGame()">Next Game ▶</button>
+        </div>
+    </div>
+    
+    <div class="game-list">
+        <h3>Game List</h3>
+        <div id="gameButtons"></div>
+    </div>
+    
+    <div class="payment-overlay" id="paymentOverlay">
+        <div class="payment-modal">
+            <h2>🎮 Premium Game</h2>
+            <p><strong id="premiumGameName"></strong></p>
+            <div class="amount">$1.00</div>
+            <p>Pay with Bitcoin to play this game</p>
+            <button class="pay-btn" onclick="goToPayment()">Pay Now</button>
+            <button class="cancel-btn" onclick="closePaymentModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // 게임 목록
+        const games = [
+            {
+                title: "Game 1",
+                url: "https://deepthrees.github.io/simplegame/Dodge_game7.html",
+                premium: false
+            },
+            {
+                title: "Game 2",
+                url: "https://deepthrees.github.io/simplegame/Piyong_game6.html",
+                premium: false
+            },
+            {
+                title: "₿ Ad with Bit",
+                url: "https://deepthrees.github.io/simplegame/bitcoin_ad.html",
+                premium: false
+            },
+            {
+                title: "🎮 Squirrel Volleyball",
+                url: "squirrel_game.html",
+                premium: true,
+                gameId: "squirrel_volleyball"
+            }
+        ];
+        
+        let currentGameIndex = 0;
+        let pendingGameIndex = -1;
+        
+        function checkPaymentStatus(gameId) {
+            const paymentData = localStorage.getItem('gamePayment_' + gameId);
+            if (!paymentData) return false;
+            
+            try {
+                const data = JSON.parse(paymentData);
+                return data.paid === true;
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        function clearPaymentStatus(gameId) {
+            localStorage.removeItem('gamePayment_' + gameId);
+        }
+        
+        function loadGame(index) {
+            if (index >= 0 && index < games.length) {
+                const game = games[index];
+                
+                // Premium game check
+                if (game.premium) {
+                    if (!checkPaymentStatus(game.gameId)) {
+                        showPaymentModal(index);
+                        return;
+                    }
+                }
+                
+                // Load game
+                document.getElementById('gameFrame').src = game.url;
+                document.getElementById('gameTitle').textContent = game.title;
+                document.getElementById('gameCounter').textContent = `(${index + 1}/${games.length})`;
+                currentGameIndex = index;
+                updateGameButtons();
+                
+                // Clear payment after loading premium game
+                if (game.premium && game.gameId) {
+                    setTimeout(() => {
+                        clearPaymentStatus(game.gameId);
+                    }, 1000);
+                }
+            }
+        }
+        
+        function showPaymentModal(index) {
+            pendingGameIndex = index;
+            const game = games[index];
+            document.getElementById('premiumGameName').textContent = game.title;
+            document.getElementById('paymentOverlay').style.display = 'flex';
+        }
+        
+        function closePaymentModal() {
+            document.getElementById('paymentOverlay').style.display = 'none';
+            pendingGameIndex = -1;
+        }
+        
+        function goToPayment() {
+            if (pendingGameIndex >= 0) {
+                const game = games[pendingGameIndex];
+                window.location.href = `payment.html?game=${game.gameId}&return=index.html`;
+            }
+        }
+        
+        function nextGame() {
+            const nextIndex = (currentGameIndex + 1) % games.length;
+            loadGame(nextIndex);
+        }
+        
+        function previousGame() {
+            const prevIndex = (currentGameIndex - 1 + games.length) % games.length;
+            loadGame(prevIndex);
+        }
+        
+        function createGameButtons() {
+            const container = document.getElementById('gameButtons');
+            games.forEach((game, index) => {
+                const button = document.createElement('button');
+                button.textContent = game.title;
+                button.onclick = () => loadGame(index);
+                button.id = `gameBtn${index}`;
+                
+                // Premium badge
+                if (game.premium) {
+                    const badge = document.createElement('span');
+                    badge.className = 'premium-badge';
+                    badge.textContent = '₿';
+                    button.appendChild(badge);
+                }
+                
+                // Bitcoin button styling
+                if (game.title.includes('₿')) {
+                    button.classList.add('bitcoin-btn');
+                }
+                
+                container.appendChild(button);
+            });
+        }
+        
+        function updateGameButtons() {
+            games.forEach((_, index) => {
+                const button = document.getElementById(`gameBtn${index}`);
+                if (index === currentGameIndex) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        }
+        
+        // 키보드 단축키
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                previousGame();
+            } else if (e.key === 'ArrowRight') {
+                nextGame();
+            }
+        });
+        
+        // 페이지 로드 시 결제 완료 체크
+        window.addEventListener('load', () => {
+            createGameButtons();
+            
+            // Check if returning from payment
+            const urlParams = new URLSearchParams(window.location.search);
+            const paidGame = urlParams.get('paid');
+            
+            if (paidGame) {
+                // Find and load the paid game
+                const gameIndex = games.findIndex(g => g.gameId === paidGame);
+                if (gameIndex >= 0) {
+                    loadGame(gameIndex);
+                    // Clean URL
+                    window.history.replaceState({}, document.title, 'index.html');
+                    return;
+                }
+            }
+            
+            // Load first game
+            loadGame(0);
+        });
+    </script>
+</body>
+</html>
