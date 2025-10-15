@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Payment - Premium Game Access</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .payment-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #f7931a, #ffab00);
+        }
+        
+        .bitcoin-logo {
+            font-size: 48px;
+            color: #f7931a;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .game-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #f7931a;
+        }
+        
+        .amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #f7931a;
+            margin-bottom: 20px;
+        }
+        
+        .qr-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        #qrcode {
+            margin: 0 auto 20px auto;
+            border: 3px solid #f7931a;
+            border-radius: 10px;
+            padding: 10px;
+            background: white;
+        }
+        
+        .address {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            word-break: break-all;
+            font-size: 14px;
+            color: #495057;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .address:hover {
+            background: #dee2e6;
+        }
+        
+        .copy-btn {
+            background: #f7931a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #e8860b;
+        }
+        
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #dc3545;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f7931a, #ffab00);
+            width: 100%;
+            transition: width 1s linear;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .status.waiting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.success {
+            background: #d1edff;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .instructions {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #0c5460;
+        }
+        
+        @media (max-width: 600px) {
+            .payment-container {
+                padding: 20px;
+            }
+            
+            .amount {
+                font-size: 28px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="bitcoin-logo">₿</div>
+        <h1>Support & Play</h1>
+        
+        <div class="game-info">
+            <strong>Game:</strong> <span id="gameName">Premium Game</span><br>
+            <small>Free to play • Donations appreciated!</small>
+        </div>
+        
+        <div class="amount">$1.00 USD</div>
+        <div style="color: #666; margin-bottom: 20px;">≈ 0.000025 BTC</div>
+        
+        <div class="instructions">
+            <strong>Support the Developer (Optional):</strong><br>
+            If you enjoy this game, consider supporting with Bitcoin!<br>
+            Or simply click "Continue to Game" below to play for free.
+        </div>
+        
+        <div class="qr-section">
+            <canvas id="qrcode" width="200" height="200"></canvas>
+            <div class="address" id="btcAddress" onclick="copyAddress()"></div>
+            <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
+        </div>
+        
+        <div class="timer" id="timer" style="color: #666; font-size: 14px;">Optional donation • Play anytime</div>
+        
+        <div class="status waiting" id="status">
+            💝 Support is optional • Click "Continue to Game" to play now
+        </div>
+        
+        <div class="buttons">
+            <button class="btn btn-success" onclick="continueToGame()">
+                ▶ Continue to Game
+            </button>
+            <button class="btn btn-primary" onclick="simulatePayment()">
+                ✅ I've Paid
+            </button>
+            <button class="btn btn-secondary" onclick="goBack()">
+                ← Back to Games
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class BitcoinPayment {
+            constructor() {
+                this.timeLeft = 900; // 15 minutes
+                this.timer = null;
+                this.btcAddress = this.generateBitcoinAddress();
+                this.init();
+            }
+            
+            generateBitcoinAddress() {
+                // Use real Bitcoin address
+                return '34qtHzLccGB5Nnyv4nAPYJZN9zJmxxe4HN';
+            }
+            
+            init() {
+                // Get game name from URL params
+                const urlParams = new URLSearchParams(window.location.search);
+                const gameName = urlParams.get('game') || 'Premium Game';
+                document.getElementById('gameName').textContent = gameName;
+                
+                // Set bitcoin address
+                document.getElementById('btcAddress').textContent = this.btcAddress;
+                
+                // Generate QR code
+                const qr = new QRious({
+                    element: document.getElementById('qrcode'),
+                    value: `bitcoin:${this.btcAddress}?amount=0.000025`,
+                    size: 200,
+                    backgroundAlpha: 0,
+                    foreground: '#333'
+                });
+            }
+            
+            startTimer() {
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateTimer();
+                    this.updateProgress();
+                    
+                    if (this.timeLeft <= 0) {
+                        this.expirePayment();
+                    }
+                }, 1000);
+            }
+            
+            updateTimer() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                document.getElementById('timer').textContent = 
+                    `Expires in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            updateProgress() {
+                const progress = ((900 - this.timeLeft) / 900) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+            }
+            
+            simulatePayment() {
+                clearInterval(this.timer);
+                
+                // Show processing
+                document.getElementById('status').className = 'status waiting';
+                document.getElementById('status').innerHTML = '⏳ Processing...';
+                
+                // Simulate confirmation delay
+                setTimeout(() => {
+                    this.confirmPayment();
+                }, 1500);
+            }
+            
+            continueToGame() {
+                // Skip payment and go directly to game
+                this.confirmPayment();
+            }
+            
+            confirmPayment() {
+                // Mark as paid for single session (no expiry, just one-time access)
+                const gameParam = new URLSearchParams(window.location.search).get('game');
+                const paymentData = {
+                    game: gameParam || 'premium',
+                    paid: true,
+                    timestamp: Date.now(),
+                    singleUse: true
+                };
+                
+                localStorage.setItem('gamePayment_' + (gameParam || 'premium'), JSON.stringify(paymentData));
+                
+                // Update UI
+                document.getElementById('status').className = 'status success';
+                document.getElementById('status').innerHTML = '✅ Loading game...';
+                document.getElementById('timer').textContent = 'Thank you for playing!';
+                document.getElementById('timer').style.color = '#28a745';
+                
+                // Redirect back to game
+                setTimeout(() => {
+                    const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
+                    window.location.href = returnUrl;
+                }, 1500);
+            }
+            
+            expirePayment() {
+                clearInterval(this.timer);
+                document.getElementById('status').className = 'status waiting';
+                document.getElementById('status').innerHTML = '⏰ Payment expired. Please try again.';
+                document.getElementById('timer').textContent = 'Expired';
+                document.getElementById('timer').style.color = '#dc3545';
+            }
+        }
+        
+        function copyAddress() {
+            const address = document.getElementById('btcAddress').textContent;
+            navigator.clipboard.writeText(address).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const original = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.style.background = '#f7931a';
+                }, 2000);
+            });
+        }
+        
+        function continueToGame() {
+            if (window.paymentSystem) {
+                window.paymentSystem.continueToGame();
+            }
+        }
+        
+        function simulatePayment() {
+            if (window.paymentSystem) {
+                window.paymentSystem.simulatePayment();
+            }
+        }
+        
+        function goBack() {
+            const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
+            window.location.href = returnUrl;
+        }
+        
+        // Initialize payment system
+        window.addEventListener('load', () => {
+            window.paymentSystem = new BitcoinPayment();
+        });
+    </script>
+</body>
+</html>
