@@ -52,63 +52,18 @@
         
         #gameInfo {
             position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 90px;
+            right: 15px;
             color: white;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             z-index: 10;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 16px;
+            border-radius: 10px;
         }
         
-        #orientationNotice {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 15px;
-            text-align: center;
-            font-size: 18px;
-            z-index: 1000;
-            display: none;
-        }
-        
-        body.portrait #orientationNotice {
-            display: block;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
-        }
-        
-        #fullscreenBtn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 10;
-            display: none;
-        }
-        
-        body.landscape #fullscreenBtn {
-            display: block;
-        }
-        
-        #fullscreenBtn:active {
-            background: rgba(200, 200, 200, 1);
-        }
         
         #controls {
             position: absolute;
@@ -172,8 +127,6 @@
             <span id="leftScore">0</span> : <span id="rightScore">0</span>
         </div>
         
-        <button id="fullscreenBtn">⛶ 전체화면</button>
-        
         <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
         
         <div id="controls">
@@ -181,10 +134,6 @@
             <button class="control-btn" id="jumpBtn">Jump</button>
             <button class="control-btn" id="rightBtn">→</button>
         </div>
-    </div>
-    
-    <div id="orientationNotice">
-        📱 가로로 돌리면 더 좋아요! 🔄
     </div>
 
     <script>
@@ -201,17 +150,6 @@
         window.addEventListener('resize', updateOrientation);
         window.addEventListener('orientationchange', updateOrientation);
         updateOrientation();
-        
-        // 풀스크린 버튼
-        document.getElementById('fullscreenBtn').addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Fullscreen error:', err);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        });
         
         // 게임 상태
         let gameState = {
@@ -475,8 +413,14 @@
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            touchStartX = touch.clientX - rect.left;
+            const isPortrait = window.innerHeight > window.innerWidth;
+            
+            if (isPortrait) {
+                touchStartX = touch.clientY; // 세로 모드는 Y값 저장
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                touchStartX = touch.clientX - rect.left; // 가로 모드는 X값 저장
+            }
             touchActive = true;
             leftPlayer.jump();
         });
@@ -486,17 +430,35 @@
             if (!touchActive) return;
             
             const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const touchX = touch.clientX - rect.left;
-            const deltaX = touchX - touchStartX;
+            const isPortrait = window.innerHeight > window.innerWidth;
             
-            if (Math.abs(deltaX) > 10) {
-                if (deltaX > 0) {
-                    leftPlayer.moveRight();
-                } else {
-                    leftPlayer.moveLeft();
+            if (isPortrait) {
+                // 세로 모드: 위아래 터치 → 좌우 이동
+                const touchY = touch.clientY;
+                const deltaY = touchY - touchStartX; // touchStartX를 Y값 저장용으로 재활용
+                
+                if (Math.abs(deltaY) > 10) {
+                    if (deltaY > 0) {
+                        leftPlayer.moveRight(); // 아래로 = 오른쪽
+                    } else {
+                        leftPlayer.moveLeft(); // 위로 = 왼쪽
+                    }
+                    touchStartX = touchY;
                 }
-                touchStartX = touchX;
+            } else {
+                // 가로 모드: 좌우 터치 → 좌우 이동
+                const rect = canvas.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const deltaX = touchX - touchStartX;
+                
+                if (Math.abs(deltaX) > 10) {
+                    if (deltaX > 0) {
+                        leftPlayer.moveRight();
+                    } else {
+                        leftPlayer.moveLeft();
+                    }
+                    touchStartX = touchX;
+                }
             }
         });
         
@@ -586,14 +548,14 @@
             if (isPortrait) {
                 // 세로 모드: 회전된 상태 고려
                 const availHeight = window.innerWidth;
-                const availWidth = window.innerHeight * 0.75;
+                const availWidth = window.innerHeight * 0.9;
                 const scale = Math.min(availWidth / 800, availHeight / 400);
                 canvas.style.width = (800 * scale) + 'px';
                 canvas.style.height = (400 * scale) + 'px';
             } else {
-                // 가로 모드: 화면의 75% 활용
-                const availWidth = window.innerWidth * 0.95;
-                const availHeight = window.innerHeight * 0.75;
+                // 가로 모드: 화면의 90% 활용
+                const availWidth = window.innerWidth * 0.98;
+                const availHeight = window.innerHeight * 0.9;
                 const scale = Math.min(availWidth / 800, availHeight / 400);
                 canvas.style.width = (800 * scale) + 'px';
                 canvas.style.height = (400 * scale) + 'px';
