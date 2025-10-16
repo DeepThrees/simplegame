@@ -38,6 +38,8 @@
         body.portrait #gameContainer {
             transform: rotate(90deg);
             transform-origin: center center;
+            width: 100vh;
+            height: 100vw;
         }
         
         #gameCanvas {
@@ -51,10 +53,8 @@
         }
         
         #gameInfo {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
+            margin-bottom: 5px;
             color: white;
             font-size: 24px;
             font-weight: bold;
@@ -63,34 +63,24 @@
             background: rgba(0, 0, 0, 0.5);
             padding: 8px 20px;
             border-radius: 10px;
+            display: inline-block;
         }
         
         
         #controls {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            z-index: 200;
+            position: relative;
+            margin-top: 5px;
+            width: 100%;
+            z-index: 10;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 30px;
+            padding: 0;
             pointer-events: none;
-        }
-        
-        body.portrait #controls {
-            bottom: auto;
-            top: 50%;
-            left: 20px;
-            right: 20px;
-            transform: translateY(-50%);
-            flex-direction: row-reverse;
         }
         
         .left-controls {
             display: flex;
-            flex-direction: column;
             gap: 10px;
             pointer-events: auto;
         }
@@ -151,15 +141,15 @@
         </div>
         
         <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
-    </div>
-    
-    <div id="controls">
-        <div class="left-controls">
-            <button class="control-btn" id="upBtn">↑</button>
-            <button class="control-btn" id="downBtn">↓</button>
-        </div>
-        <div class="right-controls">
-            <button class="control-btn" id="jumpBtn">JUMP</button>
+        
+        <div id="controls">
+            <div class="left-controls">
+                <button class="control-btn" id="leftBtn">←</button>
+                <button class="control-btn" id="rightBtn">→</button>
+            </div>
+            <div class="right-controls">
+                <button class="control-btn" id="jumpBtn">JUMP</button>
+            </div>
         </div>
     </div>
 
@@ -393,8 +383,8 @@
         
         // 컨트롤
         const keys = {};
-        let upPressed = false;
-        let downPressed = false;
+        let leftPressed = false;
+        let rightPressed = false;
         
         function setupButton(id, onPress, onRelease) {
             const btn = document.getElementById(id);
@@ -405,8 +395,8 @@
             btn.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); });
         }
         
-        setupButton('upBtn', () => upPressed = true, () => upPressed = false);
-        setupButton('downBtn', () => downPressed = true, () => downPressed = false);
+        setupButton('leftBtn', () => leftPressed = true, () => leftPressed = false);
+        setupButton('rightBtn', () => rightPressed = true, () => rightPressed = false);
         
         document.getElementById('jumpBtn').addEventListener('click', () => leftPlayer.jump());
         document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
@@ -534,8 +524,8 @@
         function update(deltaTime) {
             if (!gameState.isGameRunning) return;
             
-            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || downPressed) leftPlayer.moveLeft();
-            if (keys['ArrowRight'] || keys['d'] || keys['D'] || upPressed) leftPlayer.moveRight();
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || leftPressed) leftPlayer.moveLeft();
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || rightPressed) leftPlayer.moveRight();
             
             // AI
             const ballDistance = Math.abs(rightPlayer.x - ball.x);
