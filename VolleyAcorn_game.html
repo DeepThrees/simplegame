@@ -59,7 +59,7 @@
             font-size: 24px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            z-index: 10;
+            z-index: 100;
             background: rgba(0, 0, 0, 0.5);
             padding: 8px 20px;
             border-radius: 10px;
@@ -67,23 +67,36 @@
         
         
         #controls {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 10;
             display: flex;
-            gap: 15px;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 20px;
+            pointer-events: none;
+        }
+        
+        .left-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        
+        .right-controls {
+            pointer-events: auto;
         }
         
         .control-btn {
             background: rgba(255, 255, 255, 0.8);
             border: 2px solid #333;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 20px;
+            width: 70px;
+            height: 70px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
             user-select: none;
@@ -100,9 +113,9 @@
         
         #jumpBtn {
             background: rgba(255, 200, 100, 0.9);
-            width: 80px;
-            height: 80px;
-            font-size: 16px;
+            width: 90px;
+            height: 90px;
+            font-size: 18px;
         }
         
         @media (max-width: 768px) {
@@ -131,9 +144,13 @@
         <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
         
         <div id="controls">
-            <button class="control-btn" id="leftBtn">←</button>
-            <button class="control-btn" id="jumpBtn">Jump</button>
-            <button class="control-btn" id="rightBtn">→</button>
+            <div class="left-controls">
+                <button class="control-btn" id="upBtn">↑</button>
+                <button class="control-btn" id="downBtn">↓</button>
+            </div>
+            <div class="right-controls">
+                <button class="control-btn" id="jumpBtn">JUMP</button>
+            </div>
         </div>
     </div>
 
@@ -367,8 +384,8 @@
         
         // 컨트롤
         const keys = {};
-        let leftPressed = false;
-        let rightPressed = false;
+        let upPressed = false;
+        let downPressed = false;
         
         function setupButton(id, onPress, onRelease) {
             const btn = document.getElementById(id);
@@ -379,8 +396,8 @@
             btn.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); });
         }
         
-        setupButton('leftBtn', () => leftPressed = true, () => leftPressed = false);
-        setupButton('rightBtn', () => rightPressed = true, () => rightPressed = false);
+        setupButton('upBtn', () => upPressed = true, () => upPressed = false);
+        setupButton('downBtn', () => downPressed = true, () => downPressed = false);
         
         document.getElementById('jumpBtn').addEventListener('click', () => leftPlayer.jump());
         document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
@@ -508,8 +525,8 @@
         function update(deltaTime) {
             if (!gameState.isGameRunning) return;
             
-            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || leftPressed) leftPlayer.moveLeft();
-            if (keys['ArrowRight'] || keys['d'] || keys['D'] || rightPressed) leftPlayer.moveRight();
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || upPressed) leftPlayer.moveLeft();
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || downPressed) leftPlayer.moveRight();
             
             // AI
             const ballDistance = Math.abs(rightPlayer.x - ball.x);
@@ -548,15 +565,15 @@
             
             if (isPortrait) {
                 // 세로 모드: 회전된 상태 고려
-                const availHeight = window.innerWidth * 0.98;
-                const availWidth = window.innerHeight * 0.95;
+                const availHeight = window.innerWidth * 0.85;
+                const availWidth = window.innerHeight * 0.85;
                 const scale = Math.min(availWidth / 800, availHeight / 400);
                 canvas.style.width = (800 * scale) + 'px';
                 canvas.style.height = (400 * scale) + 'px';
             } else {
-                // 가로 모드: 화면의 95% 활용
-                const availWidth = window.innerWidth * 0.98;
-                const availHeight = window.innerHeight * 0.95;
+                // 가로 모드: 화면의 85% 활용
+                const availWidth = window.innerWidth * 0.95;
+                const availHeight = window.innerHeight * 0.85;
                 const scale = Math.min(availWidth / 800, availHeight / 400);
                 canvas.style.width = (800 * scale) + 'px';
                 canvas.style.height = (400 * scale) + 'px';
