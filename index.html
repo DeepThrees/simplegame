@@ -80,18 +80,48 @@
             position: fixed;
             top: 15px;
             right: 15px;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.6);
             backdrop-filter: blur(10px);
             padding: 12px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             max-width: 180px;
+            transition: all 0.3s ease;
+        }
+        
+        .game-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
         }
         
         .game-list h3 {
-            margin: 0 0 10px 0;
+            margin: 0;
             color: #333;
             font-size: 14px;
+        }
+        
+        .toggle-arrow {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+            color: #666;
+        }
+        
+        .toggle-arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        .game-buttons-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .game-buttons-container.open {
+            max-height: 500px;
         }
         
         .game-list button {
@@ -216,8 +246,13 @@
     </div>
     
     <div class="game-list">
-        <h3>Game List</h3>
-        <div id="gameButtons"></div>
+        <div class="game-list-header" onclick="toggleGameList()">
+            <h3>Game List</h3>
+            <span class="toggle-arrow open">▼</span>
+        </div>
+        <div class="game-buttons-container open" id="gameButtonsContainer">
+            <div id="gameButtons"></div>
+        </div>
     </div>
     
     <div class="payment-overlay" id="paymentOverlay">
@@ -259,6 +294,14 @@
         
         let currentGameIndex = 0;
         let pendingGameIndex = -1;
+        
+        function toggleGameList() {
+            const container = document.getElementById('gameButtonsContainer');
+            const arrow = document.querySelector('.toggle-arrow');
+            
+            container.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
         
         function checkPaymentStatus(gameId) {
             const paymentData = localStorage.getItem('gamePayment_' + gameId);
