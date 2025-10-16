@@ -67,21 +67,25 @@
         
         
         #controls {
-            position: absolute;
+            position: fixed;
             bottom: 20px;
             left: 0;
             right: 0;
-            z-index: 10;
+            z-index: 200;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 0 20px;
+            padding: 0 30px;
             pointer-events: none;
         }
         
         body.portrait #controls {
-            transform: rotate(90deg);
-            transform-origin: center center;
+            bottom: auto;
+            top: 50%;
+            left: 20px;
+            right: 20px;
+            transform: translateY(-50%);
+            flex-direction: row-reverse;
         }
         
         .left-controls {
@@ -147,15 +151,15 @@
         </div>
         
         <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
-        
-        <div id="controls">
-            <div class="left-controls">
-                <button class="control-btn" id="upBtn">↑</button>
-                <button class="control-btn" id="downBtn">↓</button>
-            </div>
-            <div class="right-controls">
-                <button class="control-btn" id="jumpBtn">JUMP</button>
-            </div>
+    </div>
+    
+    <div id="controls">
+        <div class="left-controls">
+            <button class="control-btn" id="upBtn">↑</button>
+            <button class="control-btn" id="downBtn">↓</button>
+        </div>
+        <div class="right-controls">
+            <button class="control-btn" id="jumpBtn">JUMP</button>
         </div>
     </div>
 
@@ -530,8 +534,8 @@
         function update(deltaTime) {
             if (!gameState.isGameRunning) return;
             
-            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || upPressed) leftPlayer.moveLeft();
-            if (keys['ArrowRight'] || keys['d'] || keys['D'] || downPressed) leftPlayer.moveRight();
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || downPressed) leftPlayer.moveLeft();
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || upPressed) leftPlayer.moveRight();
             
             // AI
             const ballDistance = Math.abs(rightPlayer.x - ball.x);
