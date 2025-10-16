@@ -41,14 +41,7 @@
         }
         
         #gameInfo {
-            margin-top: 15px;
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #2E7D32;
-            width: 400px;
+            display: none;
         }
         
         #gameOver {
@@ -74,7 +67,7 @@
             font-weight: bold;
             border-radius: 25px;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 5px;
             margin-left: 5px;
             margin-right: 5px;
             box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
@@ -152,7 +145,6 @@
         <button id="helpButton">Help</button>
     </div>
 
-    <!-- 도움말 모달 -->
     <div id="helpModal">
         <div id="helpContent">
             <h3>How to Play</h3>
@@ -191,15 +183,13 @@
         let gameSpeed = 1;
         let spawnRate = 0.02;
         let lastAdTime = 0;
-        let adInterval = 600; // 10초 = 60fps * 10초 = 600프레임
+        let adInterval = 600;
         let frameCount = 0;
         
-        // 터치 관련 변수
         let isTouching = false;
         let touchStartX = 0;
         let playerStartX = 0;
 
-        // 키보드 입력 처리
         const keys = {};
         document.addEventListener('keydown', (e) => {
             keys[e.key] = true;
@@ -208,7 +198,6 @@
             keys[e.key] = false;
         });
 
-        // 터치 이벤트 처리
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             if (!gameRunning) return;
@@ -228,7 +217,6 @@
             const touchDiff = currentTouchX - touchStartX;
             const newX = playerStartX + touchDiff;
             
-            // 화면 경계 내에서만 이동
             if (newX >= 0 && newX <= canvas.width - player.width) {
                 player.x = newX;
             } else if (newX < 0) {
@@ -252,7 +240,6 @@
             const centerX = player.x + player.width / 2;
             const centerY = player.y + player.height / 2;
             
-            // 꼬리
             ctx.fillStyle = '#D2691E';
             ctx.beginPath();
             ctx.ellipse(centerX + 12, centerY - 8, 8, 16, Math.PI / 6, 0, Math.PI * 2);
@@ -261,21 +248,18 @@
             ctx.lineWidth = 1;
             ctx.stroke();
             
-            // 몸체
             ctx.fillStyle = '#D2691E';
             ctx.beginPath();
             ctx.ellipse(centerX, centerY + 4, 8, 12, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             
-            // 머리
             ctx.fillStyle = '#D2691E';
             ctx.beginPath();
             ctx.arc(centerX, centerY - 8, 8, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             
-            // 귀
             ctx.fillStyle = '#D2691E';
             ctx.beginPath();
             ctx.ellipse(centerX - 6, centerY - 14, 3.2, 4.8, -Math.PI / 6, 0, Math.PI * 2);
@@ -287,7 +271,6 @@
             ctx.fill();
             ctx.stroke();
             
-            // 귀 안쪽
             ctx.fillStyle = '#FFB6C1';
             ctx.beginPath();
             ctx.ellipse(centerX - 6, centerY - 14, 1.6, 2.4, -Math.PI / 6, 0, Math.PI * 2);
@@ -297,7 +280,6 @@
             ctx.ellipse(centerX + 6, centerY - 14, 1.6, 2.4, Math.PI / 6, 0, Math.PI * 2);
             ctx.fill();
             
-            // 눈
             ctx.fillStyle = '#000';
             ctx.beginPath();
             ctx.arc(centerX - 3.2, centerY - 10, 1.2, 0, Math.PI * 2);
@@ -307,7 +289,6 @@
             ctx.arc(centerX + 3.2, centerY - 10, 1.2, 0, Math.PI * 2);
             ctx.fill();
             
-            // 눈 반짝임
             ctx.fillStyle = '#FFF';
             ctx.beginPath();
             ctx.arc(centerX - 2.4, centerY - 11.2, 0.4, 0, Math.PI * 2);
@@ -317,13 +298,11 @@
             ctx.arc(centerX + 4, centerY - 11.2, 0.4, 0, Math.PI * 2);
             ctx.fill();
             
-            // 코
             ctx.fillStyle = '#FF69B4';
             ctx.beginPath();
             ctx.arc(centerX, centerY - 7.2, 1.2, 0, Math.PI * 2);
             ctx.fill();
             
-            // 입
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -335,19 +314,16 @@
             const centerX = acorn.x + acorn.width / 2;
             const centerY = acorn.y + acorn.height / 2;
             
-            // 도토리 몸통
             ctx.fillStyle = '#8B4513';
             ctx.beginPath();
             ctx.ellipse(centerX, centerY + 3, 8, 12, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // 도토리 뚜껑
             ctx.fillStyle = '#654321';
             ctx.beginPath();
             ctx.ellipse(centerX, centerY - 6, 8, 6, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // 도토리 뚜껑 무늬
             ctx.strokeStyle = '#4A2C17';
             ctx.lineWidth = 1;
             for (let i = 0; i < 3; i++) {
@@ -356,26 +332,36 @@
                 ctx.stroke();
             }
             
-            // 도토리 줄기
             ctx.fillStyle = '#654321';
             ctx.fillRect(centerX - 1, centerY - 12, 2, 4);
         }
 
         function drawAd(ad) {
-            // 광고 배경
             ctx.fillStyle = 'rgba(0, 200, 0, 0.8)';
             ctx.fillRect(ad.x, ad.y, ad.width, ad.height);
             
-            // 광고 테두리
             ctx.strokeStyle = '#00AA00';
             ctx.lineWidth = 2;
             ctx.strokeRect(ad.x, ad.y, ad.width, ad.height);
             
-            // 광고 텍스트
             ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('simplegame.life', ad.x + ad.width / 2, ad.y + ad.height / 2 + 4);
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.fillRect(10, 10, 180, 35);
+            ctx.strokeStyle = '#2E7D32';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, 180, 35);
+            
+            ctx.fillStyle = '#2E7D32';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('Score: ' + score, 20, 32);
+            ctx.fillText('Lives: ' + lives, 110, 32);
         }
 
         function spawnAcorn() {
@@ -406,7 +392,6 @@
         }
 
         function updatePlayer() {
-            // 키보드 입력 처리
             if (keys['ArrowLeft']) {
                 player.x -= player.speed;
                 if (player.x < -player.width) {
@@ -426,7 +411,6 @@
                 acorns[i].y += acorns[i].speed * gameSpeed;
                 acorns[i].rotation += 0.1;
                 
-                // 화면을 벗어난 도토리 제거 및 점수 증가
                 if (acorns[i].y > canvas.height) {
                     acorns.splice(i, 1);
                     score += 10;
@@ -439,17 +423,15 @@
             for (let i = ads.length - 1; i >= 0; i--) {
                 ads[i].y += ads[i].speed * gameSpeed;
                 
-                // 화면을 벗어난 광고 제거 및 점수 증가
                 if (ads[i].y > canvas.height) {
                     ads.splice(i, 1);
-                    score += 20; // 광고를 피하면 더 많은 점수
+                    score += 20;
                     scoreElement.textContent = score;
                 }
             }
         }
 
         function checkCollisions() {
-            // 도토리 충돌 검사
             for (let i = acorns.length - 1; i >= 0; i--) {
                 const acorn = acorns[i];
                 if (player.x + 5 < acorn.x + acorn.width - 5 &&
@@ -469,7 +451,6 @@
                 }
             }
 
-            // 광고 충돌 검사 (라이프 증가!)
             for (let i = ads.length - 1; i >= 0; i--) {
                 const ad = ads[i];
                 if (player.x + 5 < ad.x + ad.width - 5 &&
@@ -480,10 +461,10 @@
                     lives++;
                     livesElement.textContent = lives;
                     ads.splice(i, 1);
-                    score += 50; // 보너스 점수
+                    score += 50;
                     scoreElement.textContent = score;
                     
-                    flashScreen('#00FF00'); // 초록색 깜빡임
+                    flashScreen('#00FF00');
                 }
             }
         }
@@ -504,10 +485,8 @@
         function gameLoop() {
             if (!gameRunning) return;
 
-            // 화면 클리어
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 게임 로직 업데이트
             updatePlayer();
             spawnAcorn();
             spawnAdByTime();
@@ -516,10 +495,10 @@
             checkCollisions();
             increaseDifficulty();
 
-            // 그리기
             drawSquirrel();
             acorns.forEach(drawAcorn);
             ads.forEach(drawAd);
+            drawScore();
 
             requestAnimationFrame(gameLoop);
         }
@@ -556,7 +535,6 @@
             startButton.style.display = 'inline-block';
         }
 
-        // 이벤트 리스너
         startButton.addEventListener('click', startGame);
         restartButton.addEventListener('click', restartGame);
         helpButton.addEventListener('click', () => {
@@ -575,7 +553,6 @@
             canvas.focus();
         });
         
-        // 초기 화면 그리기
         drawSquirrel();
     </script>
 </body>
