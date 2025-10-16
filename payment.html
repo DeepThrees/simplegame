@@ -2,9 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bitcoin Payment - Premium Game Access</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>다람쥐 도토리 배구</title>
     <style>
         * {
             margin: 0;
@@ -13,413 +12,621 @@
         }
         
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            transition: transform 0.3s ease;
         }
         
-        .payment-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+        /* 세로 모드일 때 회전 */
+        body.portrait #gameContainer {
+            transform: rotate(90deg);
+            transform-origin: center center;
         }
         
-        .payment-container::before {
-            content: '';
+        #gameCanvas {
+            display: block;
+            border: 3px solid #8B4513;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #90EE90 70%, #228B22 100%);
+            outline: none;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        #gameInfo {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #f7931a, #ffab00);
-        }
-        
-        .bitcoin-logo {
-            font-size: 48px;
-            color: #f7931a;
-            margin-bottom: 20px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        
-        .game-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            border-left: 4px solid #f7931a;
-        }
-        
-        .amount {
-            font-size: 36px;
-            font-weight: bold;
-            color: #f7931a;
-            margin-bottom: 20px;
-        }
-        
-        .qr-section {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-        
-        #qrcode {
-            margin: 0 auto 20px auto;
-            border: 3px solid #f7931a;
-            border-radius: 10px;
-            padding: 10px;
-            background: white;
-        }
-        
-        .address {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            word-break: break-all;
-            font-size: 14px;
-            color: #495057;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .address:hover {
-            background: #dee2e6;
-        }
-        
-        .copy-btn {
-            background: #f7931a;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
             color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.3s;
-        }
-        
-        .copy-btn:hover {
-            background: #e8860b;
-        }
-        
-        .timer {
             font-size: 24px;
             font-weight: bold;
-            margin: 20px 0;
-            color: #dc3545;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
         }
         
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #f7931a, #ffab00);
-            width: 100%;
-            transition: width 1s linear;
-        }
-        
-        .status {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        
-        .status.waiting {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        
-        .status.success {
-            background: #d1edff;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        
-        .buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            min-width: 120px;
-        }
-        
-        .btn-primary {
-            background: #007bff;
+        #orientationNotice {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
             color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #0056b3;
-        }
-        
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #1e7e34;
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #545b62;
-        }
-        
-        .hidden {
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            z-index: 1000;
             display: none;
         }
         
-        .instructions {
-            background: #e7f3ff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #0c5460;
+        body.portrait #orientationNotice {
+            display: block;
+            animation: pulse 2s infinite;
         }
         
-        @media (max-width: 600px) {
-            .payment-container {
-                padding: 20px;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        #fullscreenBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+        }
+        
+        body.landscape #fullscreenBtn {
+            display: block;
+        }
+        
+        #fullscreenBtn:active {
+            background: rgba(200, 200, 200, 1);
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #333;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.9);
+            background: rgba(200, 200, 200, 1);
+        }
+        
+        #jumpBtn {
+            background: rgba(255, 200, 100, 0.9);
+            width: 70px;
+            height: 70px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            #gameInfo {
+                font-size: 20px;
             }
             
-            .amount {
-                font-size: 28px;
+            .control-btn {
+                width: 55px;
+                height: 55px;
             }
             
-            .buttons {
-                flex-direction: column;
+            #jumpBtn {
+                width: 65px;
+                height: 65px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="payment-container">
-        <div class="bitcoin-logo">₿</div>
-        <h1>Support & Play</h1>
-        
-        <div class="game-info">
-            <strong>Game:</strong> <span id="gameName">Premium Game</span><br>
-            <small>Free to play • Donations appreciated!</small>
+    <div id="gameContainer">
+        <div id="gameInfo">
+            <span id="leftScore">0</span> : <span id="rightScore">0</span>
         </div>
         
-        <div class="amount">$1.00 USD</div>
-        <div style="color: #666; margin-bottom: 20px;">≈ 0.000025 BTC</div>
+        <button id="fullscreenBtn">⛶ 전체화면</button>
         
-        <div class="instructions">
-            <strong>Tip the Developer :D (Optional):</strong><br>
-            If you enjoy this game, consider supporting with Bitcoin!<br>
-            Or simply click "Continue to Game" below to play for free.
+        <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
+        
+        <div id="controls">
+            <button class="control-btn" id="leftBtn">←</button>
+            <button class="control-btn" id="jumpBtn">Jump</button>
+            <button class="control-btn" id="rightBtn">→</button>
         </div>
-        
-        <div class="qr-section">
-            <canvas id="qrcode" width="200" height="200"></canvas>
-            <div class="address" id="btcAddress" onclick="copyAddress()"></div>
-            <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
-        </div>
-        
-        <div class="timer" id="timer" style="color: #666; font-size: 14px;">Optional donation • Play anytime</div>
-        
-        <div class="status waiting" id="status">
-            💝 Support is optional • Click "Continue to Game" to play now
-        </div>
-        
-        <div class="buttons">
-            <button class="btn btn-success" onclick="continueToGame()">
-                ▶ Continue to Game
-            </button>
-            <button class="btn btn-primary" onclick="simulatePayment()">
-                ✅ I've Paid
-            </button>
-            <button class="btn btn-secondary" onclick="goBack()">
-                ← Back to Games
-            </button>
-        </div>
+    </div>
+    
+    <div id="orientationNotice">
+        📱 가로로 돌리면 더 좋아요! 🔄
     </div>
 
     <script>
-        class BitcoinPayment {
-            constructor() {
-                this.timeLeft = 900; // 15 minutes
-                this.timer = null;
-                this.btcAddress = this.generateBitcoinAddress();
-                this.init();
-            }
-            
-            generateBitcoinAddress() {
-                // Use real Bitcoin address
-                return '34qtHzLccGB5Nnyv4nAPYJZN9zJmxxe4HN';
-            }
-            
-            init() {
-                // Get game name from URL params
-                const urlParams = new URLSearchParams(window.location.search);
-                const gameName = urlParams.get('game') || 'Premium Game';
-                document.getElementById('gameName').textContent = gameName;
-                
-                // Set bitcoin address
-                document.getElementById('btcAddress').textContent = this.btcAddress;
-                
-                // Generate QR code
-                const qr = new QRious({
-                    element: document.getElementById('qrcode'),
-                    value: `bitcoin:${this.btcAddress}?amount=0.000025`,
-                    size: 200,
-                    backgroundAlpha: 0,
-                    foreground: '#333'
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Orientation 감지
+        function updateOrientation() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            document.body.className = isPortrait ? 'portrait' : 'landscape';
+            resizeCanvas();
+        }
+        
+        window.addEventListener('resize', updateOrientation);
+        window.addEventListener('orientationchange', updateOrientation);
+        updateOrientation();
+        
+        // 풀스크린 버튼
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
                 });
+            } else {
+                document.exitFullscreen();
             }
-            
-            startTimer() {
-                this.timer = setInterval(() => {
-                    this.timeLeft--;
-                    this.updateTimer();
-                    this.updateProgress();
-                    
-                    if (this.timeLeft <= 0) {
-                        this.expirePayment();
-                    }
-                }, 1000);
-            }
-            
-            updateTimer() {
-                const minutes = Math.floor(this.timeLeft / 60);
-                const seconds = this.timeLeft % 60;
-                document.getElementById('timer').textContent = 
-                    `Expires in: ${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-            
-            updateProgress() {
-                const progress = ((900 - this.timeLeft) / 900) * 100;
-                document.getElementById('progressFill').style.width = progress + '%';
-            }
-            
-            simulatePayment() {
-                clearInterval(this.timer);
-                
-                // Show processing
-                document.getElementById('status').className = 'status waiting';
-                document.getElementById('status').innerHTML = '⏳ Processing...';
-                
-                // Simulate confirmation delay
-                setTimeout(() => {
-                    this.confirmPayment();
-                }, 1500);
-            }
-            
-            continueToGame() {
-                // Skip payment and go directly to game
-                this.confirmPayment();
-            }
-            
-            confirmPayment() {
-                // Mark as paid for single session (no expiry, just one-time access)
-                const gameParam = new URLSearchParams(window.location.search).get('game');
-                const paymentData = {
-                    game: gameParam || 'premium',
-                    paid: true,
-                    timestamp: Date.now(),
-                    singleUse: true
-                };
-                
-                localStorage.setItem('gamePayment_' + (gameParam || 'premium'), JSON.stringify(paymentData));
-                
-                // Update UI
-                document.getElementById('status').className = 'status success';
-                document.getElementById('status').innerHTML = '✅ Loading game...';
-                document.getElementById('timer').textContent = 'Thank you for playing!';
-                document.getElementById('timer').style.color = '#28a745';
-                
-                // Redirect back to game
-                setTimeout(() => {
-                    const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
-                    window.location.href = returnUrl;
-                }, 1500);
-            }
-            
-            expirePayment() {
-                clearInterval(this.timer);
-                document.getElementById('status').className = 'status waiting';
-                document.getElementById('status').innerHTML = '⏰ Payment expired. Please try again.';
-                document.getElementById('timer').textContent = 'Expired';
-                document.getElementById('timer').style.color = '#dc3545';
-            }
-        }
-        
-        function copyAddress() {
-            const address = document.getElementById('btcAddress').textContent;
-            navigator.clipboard.writeText(address).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                const original = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                btn.style.background = '#28a745';
-                setTimeout(() => {
-                    btn.textContent = original;
-                    btn.style.background = '#f7931a';
-                }, 2000);
-            });
-        }
-        
-        function continueToGame() {
-            if (window.paymentSystem) {
-                window.paymentSystem.continueToGame();
-            }
-        }
-        
-        function simulatePayment() {
-            if (window.paymentSystem) {
-                window.paymentSystem.simulatePayment();
-            }
-        }
-        
-        function goBack() {
-            const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
-            window.location.href = returnUrl;
-        }
-        
-        // Initialize payment system
-        window.addEventListener('load', () => {
-            window.paymentSystem = new BitcoinPayment();
         });
+        
+        // 게임 상태
+        let gameState = {
+            leftScore: 0,
+            rightScore: 0,
+            isGameRunning: true
+        };
+        
+        let lastTime = 0;
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // 플레이어
+        class Player {
+            constructor(x, y, isLeft = true) {
+                this.x = x;
+                this.y = y;
+                this.width = 55;
+                this.height = 55;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.isOnGround = false;
+                this.isLeft = isLeft;
+                this.color = isLeft ? '#D2691E' : '#8B4513';
+            }
+            
+            update(deltaTime) {
+                this.velocityY += 1200 * deltaTime;
+                this.x += this.velocityX * deltaTime;
+                this.y += this.velocityY * deltaTime;
+                
+                const groundY = canvas.height - this.height - 20;
+                if (this.y >= groundY) {
+                    this.y = groundY;
+                    this.velocityY = 0;
+                    this.isOnGround = true;
+                } else {
+                    this.isOnGround = false;
+                }
+                
+                const leftBound = this.isLeft ? 0 : canvas.width / 2 + 10;
+                const rightBound = this.isLeft ? canvas.width / 2 - 10 : canvas.width - this.width;
+                
+                if (this.x < leftBound) this.x = leftBound;
+                if (this.x > rightBound) this.x = rightBound;
+                
+                this.velocityX *= Math.pow(0.8, deltaTime * 60);
+            }
+            
+            moveLeft() {
+                this.velocityX = -300;
+            }
+            
+            moveRight() {
+                this.velocityX = 300;
+            }
+            
+            jump() {
+                if (this.isOnGround) {
+                    this.velocityY = -600;
+                    this.isOnGround = false;
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                
+                const tailX = this.isLeft ? this.x - 10 : this.x + this.width + 10;
+                ctx.beginPath();
+                ctx.ellipse(tailX, this.y + 5, 15, 25, this.isLeft ? -0.3 : 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 - 8, this.y + 12, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 + 8, this.y + 12, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 - 6, this.y + this.height/2 - 3, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2 + 6, this.y + this.height/2 - 3, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(this.x + this.width/2, this.y + this.height/2 + 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // 공
+        class Ball {
+            constructor() {
+                this.reset();
+                this.radius = 18;
+                this.color = '#8B4513';
+            }
+            
+            reset() {
+                this.x = canvas.width / 2;
+                this.y = 100;
+                this.velocityX = Math.random() > 0.5 ? 180 : -180;
+                this.velocityY = 0;
+            }
+            
+            update(deltaTime) {
+                this.velocityY += 800 * deltaTime;
+                this.x += this.velocityX * deltaTime;
+                this.y += this.velocityY * deltaTime;
+                
+                if (this.y + this.radius >= canvas.height - 20) {
+                    this.y = canvas.height - 20 - this.radius;
+                    this.velocityY *= -0.7;
+                    this.velocityX *= Math.pow(0.9, deltaTime * 60);
+                    
+                    if (this.x < canvas.width / 2) {
+                        gameState.rightScore++;
+                        this.reset();
+                    } else {
+                        gameState.leftScore++;
+                        this.reset();
+                    }
+                    updateScore();
+                }
+                
+                if (this.x - this.radius <= 0 || this.x + this.radius >= canvas.width) {
+                    this.velocityX *= -0.8;
+                    this.x = this.x - this.radius <= 0 ? this.radius : canvas.width - this.radius;
+                }
+                
+                if (this.y - this.radius <= 0) {
+                    this.y = this.radius;
+                    this.velocityY *= -0.8;
+                }
+                
+                const netX = canvas.width / 2;
+                const netTop = canvas.height - 120;
+                if (Math.abs(this.x - netX) < this.radius + 5 && this.y + this.radius > netTop) {
+                    if (this.x < netX) {
+                        this.x = netX - this.radius - 5;
+                    } else {
+                        this.x = netX + this.radius + 5;
+                    }
+                    this.velocityX *= -0.8;
+                }
+            }
+            
+            checkPlayerCollision(player) {
+                const dx = this.x - (player.x + player.width / 2);
+                const dy = this.y - (player.y + player.height / 2);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.radius + 20) {
+                    const angle = Math.atan2(dy, dx);
+                    const power = 480;
+                    
+                    this.velocityX = Math.cos(angle) * power;
+                    this.velocityY = Math.sin(angle) * power - 120;
+                    
+                    this.x = player.x + player.width / 2 + Math.cos(angle) * (this.radius + 25);
+                    this.y = player.y + player.height / 2 + Math.sin(angle) * (this.radius + 25);
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y, this.radius * 0.8, this.radius, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.fillStyle = '#654321';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y - this.radius * 0.3, this.radius * 0.6, this.radius * 0.4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#5D4037';
+                ctx.lineWidth = 1;
+                for (let i = -3; i <= 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.x - this.radius * 0.5, this.y - this.radius * 0.3 + i * 3);
+                    ctx.lineTo(this.x + this.radius * 0.5, this.y - this.radius * 0.3 + i * 3);
+                    ctx.stroke();
+                }
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x - 6, this.y - 6, this.radius / 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        const leftPlayer = new Player(100, canvas.height - 75, true);
+        const rightPlayer = new Player(canvas.width - 155, canvas.height - 75, false);
+        const ball = new Ball();
+        
+        // 컨트롤
+        const keys = {};
+        let leftPressed = false;
+        let rightPressed = false;
+        
+        function setupButton(id, onPress, onRelease) {
+            const btn = document.getElementById(id);
+            btn.addEventListener('mousedown', onPress);
+            btn.addEventListener('mouseup', onRelease);
+            btn.addEventListener('mouseleave', onRelease);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); onPress(); });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); });
+        }
+        
+        setupButton('leftBtn', () => leftPressed = true, () => leftPressed = false);
+        setupButton('rightBtn', () => rightPressed = true, () => rightPressed = false);
+        
+        document.getElementById('jumpBtn').addEventListener('click', () => leftPlayer.jump());
+        document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            leftPlayer.jump();
+        });
+        
+        // 키보드
+        function handleKeyDown(e) {
+            keys[e.key] = true;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') leftPlayer.moveLeft();
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') leftPlayer.moveRight();
+            if (e.key === ' ' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') leftPlayer.jump();
+            e.preventDefault();
+        }
+        
+        function handleKeyUp(e) {
+            keys[e.key] = false;
+            e.preventDefault();
+        }
+        
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        canvas.addEventListener('keydown', handleKeyDown);
+        canvas.addEventListener('keyup', handleKeyUp);
+        
+        // 터치 이벤트
+        let touchStartX = 0;
+        let touchActive = false;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const isPortrait = window.innerHeight > window.innerWidth;
+            
+            if (isPortrait) {
+                touchStartX = touch.clientY; // 세로 모드는 Y값 저장
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                touchStartX = touch.clientX - rect.left; // 가로 모드는 X값 저장
+            }
+            touchActive = true;
+            leftPlayer.jump();
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!touchActive) return;
+            
+            const touch = e.touches[0];
+            const isPortrait = window.innerHeight > window.innerWidth;
+            
+            if (isPortrait) {
+                // 세로 모드: 위아래 터치 → 좌우 이동
+                const touchY = touch.clientY;
+                const deltaY = touchY - touchStartX; // touchStartX를 Y값 저장용으로 재활용
+                
+                if (Math.abs(deltaY) > 10) {
+                    if (deltaY > 0) {
+                        leftPlayer.moveRight(); // 아래로 = 오른쪽
+                    } else {
+                        leftPlayer.moveLeft(); // 위로 = 왼쪽
+                    }
+                    touchStartX = touchY;
+                }
+            } else {
+                // 가로 모드: 좌우 터치 → 좌우 이동
+                const rect = canvas.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const deltaX = touchX - touchStartX;
+                
+                if (Math.abs(deltaX) > 10) {
+                    if (deltaX > 0) {
+                        leftPlayer.moveRight();
+                    } else {
+                        leftPlayer.moveLeft();
+                    }
+                    touchStartX = touchX;
+                }
+            }
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchActive = false;
+        });
+        
+        function updateScore() {
+            document.getElementById('leftScore').textContent = gameState.leftScore;
+            document.getElementById('rightScore').textContent = gameState.rightScore;
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height - 120);
+            ctx.lineTo(canvas.width / 2, canvas.height - 20);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(canvas.width / 2 - 3, canvas.height - 120, 6, 8);
+            
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 20);
+            ctx.lineTo(canvas.width, canvas.height - 20);
+            ctx.stroke();
+            
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height - 20);
+            ctx.lineTo(canvas.width / 2, canvas.height - 120);
+            ctx.stroke();
+            
+            leftPlayer.draw();
+            rightPlayer.draw();
+            ball.draw();
+        }
+        
+        function update(deltaTime) {
+            if (!gameState.isGameRunning) return;
+            
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || leftPressed) leftPlayer.moveLeft();
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || rightPressed) leftPlayer.moveRight();
+            
+            // AI
+            const ballDistance = Math.abs(rightPlayer.x - ball.x);
+            if (ballDistance > 20) {
+                if (ball.x > rightPlayer.x + 20) {
+                    rightPlayer.moveRight();
+                } else if (ball.x < rightPlayer.x - 20) {
+                    rightPlayer.moveLeft();
+                }
+            }
+            
+            if (ball.y > rightPlayer.y && ball.velocityY > 0 && ballDistance < 80) {
+                rightPlayer.jump();
+            }
+            
+            leftPlayer.update(deltaTime);
+            rightPlayer.update(deltaTime);
+            ball.update(deltaTime);
+            
+            ball.checkPlayerCollision(leftPlayer);
+            ball.checkPlayerCollision(rightPlayer);
+        }
+        
+        function gameLoop(currentTime) {
+            if (lastTime === 0) lastTime = currentTime;
+            const deltaTime = Math.min((currentTime - lastTime) / 1000, 1/60);
+            lastTime = currentTime;
+            
+            update(deltaTime);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function resizeCanvas() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            
+            if (isPortrait) {
+                // 세로 모드: 회전된 상태 고려
+                const availHeight = window.innerWidth;
+                const availWidth = window.innerHeight * 0.75;
+                const scale = Math.min(availWidth / 800, availHeight / 400);
+                canvas.style.width = (800 * scale) + 'px';
+                canvas.style.height = (400 * scale) + 'px';
+            } else {
+                // 가로 모드: 화면의 75% 활용
+                const availWidth = window.innerWidth * 0.95;
+                const availHeight = window.innerHeight * 0.75;
+                const scale = Math.min(availWidth / 800, availHeight / 400);
+                canvas.style.width = (800 * scale) + 'px';
+                canvas.style.height = (400 * scale) + 'px';
+            }
+        }
+        
+        updateScore();
+        canvas.focus();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
