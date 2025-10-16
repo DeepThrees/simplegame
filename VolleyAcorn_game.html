@@ -52,15 +52,16 @@
         
         #gameInfo {
             position: absolute;
-            bottom: 90px;
-            right: 15px;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
             color: white;
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             z-index: 10;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 20px;
             border-radius: 10px;
         }
         
@@ -99,8 +100,8 @@
         
         #jumpBtn {
             background: rgba(255, 200, 100, 0.9);
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             font-size: 16px;
         }
         
@@ -422,7 +423,7 @@
                 touchStartX = touch.clientX - rect.left; // 가로 모드는 X값 저장
             }
             touchActive = true;
-            leftPlayer.jump();
+            // 점프 제거 - 버튼만 사용
         });
         
         canvas.addEventListener('touchmove', (e) => {
@@ -547,15 +548,15 @@
             
             if (isPortrait) {
                 // 세로 모드: 회전된 상태 고려
-                const availHeight = window.innerWidth;
-                const availWidth = window.innerHeight * 0.9;
+                const availHeight = window.innerWidth * 0.98;
+                const availWidth = window.innerHeight * 0.95;
                 const scale = Math.min(availWidth / 800, availHeight / 400);
                 canvas.style.width = (800 * scale) + 'px';
                 canvas.style.height = (400 * scale) + 'px';
             } else {
-                // 가로 모드: 화면의 90% 활용
+                // 가로 모드: 화면의 95% 활용
                 const availWidth = window.innerWidth * 0.98;
-                const availHeight = window.innerHeight * 0.9;
+                const availHeight = window.innerHeight * 0.95;
                 const scale = Math.min(availWidth / 800, availHeight / 400);
                 canvas.style.width = (800 * scale) + 'px';
                 canvas.style.height = (400 * scale) + 'px';
