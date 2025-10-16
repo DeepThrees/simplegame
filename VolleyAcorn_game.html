@@ -67,16 +67,21 @@
         
         
         #controls {
-            position: fixed;
-            bottom: 0;
+            position: absolute;
+            bottom: 20px;
             left: 0;
             right: 0;
             z-index: 10;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            padding: 20px;
+            padding: 0 20px;
             pointer-events: none;
+        }
+        
+        body.portrait #controls {
+            transform: rotate(90deg);
+            transform-origin: center center;
         }
         
         .left-controls {
