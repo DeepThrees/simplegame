@@ -2,9 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>다람쥐 도토리 배구</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
             padding: 0;
@@ -12,15 +18,36 @@
             font-family: Arial, sans-serif;
             overflow: hidden;
             touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+        
+        /* 세로 모드일 때 회전 */
+        body.portrait #gameContainer {
+            transform: rotate(90deg);
+            transform-origin: center center;
         }
         
         #gameCanvas {
             display: block;
-            margin: 0 auto;
             border: 3px solid #8B4513;
             border-radius: 10px;
             background: linear-gradient(to bottom, #87CEEB 0%, #90EE90 70%, #228B22 100%);
             outline: none;
+            max-width: 100%;
+            max-height: 100%;
         }
         
         #gameInfo {
@@ -35,66 +62,156 @@
             z-index: 10;
         }
         
+        #orientationNotice {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 18px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        body.portrait #orientationNotice {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        #fullscreenBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+        }
+        
+        body.landscape #fullscreenBtn {
+            display: block;
+        }
+        
+        #fullscreenBtn:active {
+            background: rgba(200, 200, 200, 1);
+        }
+        
         #controls {
             position: absolute;
             bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
-            color: white;
-            text-align: center;
-            font-size: 14px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-        }
-        
-        .control-buttons {
+            z-index: 10;
             display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 10px;
+            gap: 15px;
+            align-items: center;
         }
         
         .control-btn {
             background: rgba(255, 255, 255, 0.8);
             border: 2px solid #333;
-            border-radius: 8px;
-            padding: 10px 15px;
-            font-size: 16px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.1s;
         }
         
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 1);
+        .control-btn:active {
+            transform: scale(0.9);
+            background: rgba(200, 200, 200, 1);
         }
         
-        .control-btn:active {
-            transform: scale(0.95);
-            background: rgba(200, 200, 200, 1);
+        #jumpBtn {
+            background: rgba(255, 200, 100, 0.9);
+            width: 70px;
+            height: 70px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            #gameInfo {
+                font-size: 20px;
+            }
+            
+            .control-btn {
+                width: 55px;
+                height: 55px;
+            }
+            
+            #jumpBtn {
+                width: 65px;
+                height: 65px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="gameInfo">
-        <span id="leftScore">0</span> : <span id="rightScore">0</span>
-    </div>
-    
-    <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
-    
-    <div id="controls">
-        <div id="desktopControls">PC: ←→ Move, ↑/Space Jump | Mobile: Touch for move, Tap for jump</div>
-        <div class="control-buttons">
+    <div id="gameContainer">
+        <div id="gameInfo">
+            <span id="leftScore">0</span> : <span id="rightScore">0</span>
+        </div>
+        
+        <button id="fullscreenBtn">⛶ 전체화면</button>
+        
+        <canvas id="gameCanvas" width="800" height="400" tabindex="0"></canvas>
+        
+        <div id="controls">
             <button class="control-btn" id="leftBtn">←</button>
             <button class="control-btn" id="jumpBtn">Jump</button>
-            <button class="control-btn" id="upBtn">↑</button>
             <button class="control-btn" id="rightBtn">→</button>
         </div>
+    </div>
+    
+    <div id="orientationNotice">
+        📱 가로로 돌리면 더 좋아요! 🔄
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // Orientation 감지
+        function updateOrientation() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            document.body.className = isPortrait ? 'portrait' : 'landscape';
+            resizeCanvas();
+        }
+        
+        window.addEventListener('resize', updateOrientation);
+        window.addEventListener('orientationchange', updateOrientation);
+        updateOrientation();
+        
+        // 풀스크린 버튼
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
         
         // 게임 상태
         let gameState = {
@@ -104,8 +221,6 @@
         };
         
         let lastTime = 0;
-        
-        // 디바이스 감지
         const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
         // 플레이어
@@ -123,14 +238,10 @@
             }
             
             update(deltaTime) {
-                // 중력 적용 (시간 기반)
                 this.velocityY += 1200 * deltaTime;
-                
-                // 위치 업데이트
                 this.x += this.velocityX * deltaTime;
                 this.y += this.velocityY * deltaTime;
                 
-                // 바닥 충돌
                 const groundY = canvas.height - this.height - 20;
                 if (this.y >= groundY) {
                     this.y = groundY;
@@ -140,14 +251,12 @@
                     this.isOnGround = false;
                 }
                 
-                // 좌우 경계 체크
                 const leftBound = this.isLeft ? 0 : canvas.width / 2 + 10;
                 const rightBound = this.isLeft ? canvas.width / 2 - 10 : canvas.width - this.width;
                 
                 if (this.x < leftBound) this.x = leftBound;
                 if (this.x > rightBound) this.x = rightBound;
                 
-                // 마찰 (시간 기반)
                 this.velocityX *= Math.pow(0.8, deltaTime * 60);
             }
             
@@ -167,7 +276,6 @@
             }
             
             draw() {
-                // 다람쥐 꼬리 (뒤에 그리기)
                 ctx.fillStyle = this.color;
                 ctx.strokeStyle = '#654321';
                 ctx.lineWidth = 2;
@@ -178,13 +286,11 @@
                 ctx.fill();
                 ctx.stroke();
                 
-                // 몸체
                 ctx.beginPath();
                 ctx.arc(this.x + this.width/2, this.y + this.height/2, 20, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
                 
-                // 작은 귀
                 ctx.beginPath();
                 ctx.arc(this.x + this.width/2 - 8, this.y + 12, 5, 0, Math.PI * 2);
                 ctx.fill();
@@ -195,7 +301,6 @@
                 ctx.fill();
                 ctx.stroke();
                 
-                // 눈
                 ctx.fillStyle = '#000';
                 ctx.beginPath();
                 ctx.arc(this.x + this.width/2 - 6, this.y + this.height/2 - 3, 2.5, 0, Math.PI * 2);
@@ -205,7 +310,6 @@
                 ctx.arc(this.x + this.width/2 + 6, this.y + this.height/2 - 3, 2.5, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 코
                 ctx.fillStyle = '#8B4513';
                 ctx.beginPath();
                 ctx.arc(this.x + this.width/2, this.y + this.height/2 + 2, 2, 0, Math.PI * 2);
@@ -229,20 +333,15 @@
             }
             
             update(deltaTime) {
-                // 중력
                 this.velocityY += 800 * deltaTime;
-                
-                // 위치 업데이트
                 this.x += this.velocityX * deltaTime;
                 this.y += this.velocityY * deltaTime;
                 
-                // 바닥 충돌
                 if (this.y + this.radius >= canvas.height - 20) {
                     this.y = canvas.height - 20 - this.radius;
                     this.velocityY *= -0.7;
                     this.velocityX *= Math.pow(0.9, deltaTime * 60);
                     
-                    // 득점 체크
                     if (this.x < canvas.width / 2) {
                         gameState.rightScore++;
                         this.reset();
@@ -253,19 +352,16 @@
                     updateScore();
                 }
                 
-                // 좌우 벽 충돌
                 if (this.x - this.radius <= 0 || this.x + this.radius >= canvas.width) {
                     this.velocityX *= -0.8;
                     this.x = this.x - this.radius <= 0 ? this.radius : canvas.width - this.radius;
                 }
                 
-                // 천장 충돌
                 if (this.y - this.radius <= 0) {
                     this.y = this.radius;
                     this.velocityY *= -0.8;
                 }
                 
-                // 네트 충돌
                 const netX = canvas.width / 2;
                 const netTop = canvas.height - 120;
                 if (Math.abs(this.x - netX) < this.radius + 5 && this.y + this.radius > netTop) {
@@ -284,21 +380,18 @@
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 if (distance < this.radius + 20) {
-                    // 충돌 각도 계산
                     const angle = Math.atan2(dy, dx);
                     const power = 480;
                     
                     this.velocityX = Math.cos(angle) * power;
                     this.velocityY = Math.sin(angle) * power - 120;
                     
-                    // 공을 플레이어에서 밀어내기
                     this.x = player.x + player.width / 2 + Math.cos(angle) * (this.radius + 25);
                     this.y = player.y + player.height / 2 + Math.sin(angle) * (this.radius + 25);
                 }
             }
             
             draw() {
-                // 도토리 몸체 (타원형)
                 ctx.fillStyle = this.color;
                 ctx.strokeStyle = '#654321';
                 ctx.lineWidth = 2;
@@ -308,13 +401,11 @@
                 ctx.fill();
                 ctx.stroke();
                 
-                // 도토리 모자 (위쪽 캡)
                 ctx.fillStyle = '#654321';
                 ctx.beginPath();
                 ctx.ellipse(this.x, this.y - this.radius * 0.3, this.radius * 0.6, this.radius * 0.4, 0, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 도토리 줄무늬
                 ctx.strokeStyle = '#5D4037';
                 ctx.lineWidth = 1;
                 for (let i = -3; i <= 3; i++) {
@@ -324,7 +415,6 @@
                     ctx.stroke();
                 }
                 
-                // 하이라이트
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
                 ctx.beginPath();
                 ctx.arc(this.x - 6, this.y - 6, this.radius / 3, 0, Math.PI * 2);
@@ -332,124 +422,62 @@
             }
         }
         
-        // 게임 오브젝트 생성
         const leftPlayer = new Player(100, canvas.height - 75, true);
         const rightPlayer = new Player(canvas.width - 155, canvas.height - 75, false);
         const ball = new Ball();
         
         // 컨트롤
         const keys = {};
-        let touchStartX = 0;
-        let touchActive = false;
         let leftPressed = false;
         let rightPressed = false;
         
-        // 버튼 컨트롤 (상태만 저장)
-        document.getElementById('leftBtn').addEventListener('mousedown', () => {
-            leftPressed = true;
-        });
+        function setupButton(id, onPress, onRelease) {
+            const btn = document.getElementById(id);
+            btn.addEventListener('mousedown', onPress);
+            btn.addEventListener('mouseup', onRelease);
+            btn.addEventListener('mouseleave', onRelease);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); onPress(); });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); onRelease(); });
+        }
         
-        document.getElementById('leftBtn').addEventListener('mouseup', () => {
-            leftPressed = false;
-        });
-        
-        document.getElementById('leftBtn').addEventListener('mouseleave', () => {
-            leftPressed = false;
-        });
-        
-        document.getElementById('rightBtn').addEventListener('mousedown', () => {
-            rightPressed = true;
-        });
-        
-        document.getElementById('rightBtn').addEventListener('mouseup', () => {
-            rightPressed = false;
-        });
-        
-        document.getElementById('rightBtn').addEventListener('mouseleave', () => {
-            rightPressed = false;
-        });
+        setupButton('leftBtn', () => leftPressed = true, () => leftPressed = false);
+        setupButton('rightBtn', () => rightPressed = true, () => rightPressed = false);
         
         document.getElementById('jumpBtn').addEventListener('click', () => leftPlayer.jump());
-        document.getElementById('upBtn').addEventListener('click', () => leftPlayer.jump());
-        
-        // 터치 지원 (상태만 저장)
-        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            leftPressed = true;
-        });
-        
-        document.getElementById('leftBtn').addEventListener('touchend', (e) => {
-            e.preventDefault();
-            leftPressed = false;
-        });
-        
-        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            rightPressed = true;
-        });
-        
-        document.getElementById('rightBtn').addEventListener('touchend', (e) => {
-            e.preventDefault();
-            rightPressed = false;
-        });
-        
         document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
             e.preventDefault();
             leftPlayer.jump();
         });
         
-        document.getElementById('upBtn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            leftPlayer.jump();
-        });
-        
-        // 키보드 이벤트
+        // 키보드
         function handleKeyDown(e) {
             keys[e.key] = true;
-            keys[e.code] = true;
-            
-            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-                leftPlayer.moveLeft();
-            }
-            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-                leftPlayer.moveRight();
-            }
-            if (e.key === ' ' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') {
-                leftPlayer.jump();
-            }
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') leftPlayer.moveLeft();
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') leftPlayer.moveRight();
+            if (e.key === ' ' || e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') leftPlayer.jump();
             e.preventDefault();
         }
         
         function handleKeyUp(e) {
             keys[e.key] = false;
-            keys[e.code] = false;
             e.preventDefault();
         }
         
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', handleKeyUp);
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
         canvas.addEventListener('keydown', handleKeyDown);
         canvas.addEventListener('keyup', handleKeyUp);
         
-        canvas.setAttribute('tabindex', '0');
-        canvas.addEventListener('click', () => {
-            canvas.focus();
-        });
-        
-        window.addEventListener('load', () => {
-            canvas.focus();
-        });
-        
         // 터치 이벤트
+        let touchStartX = 0;
+        let touchActive = false;
+        
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             touchStartX = touch.clientX - rect.left;
             touchActive = true;
-            
             leftPlayer.jump();
         });
         
@@ -460,8 +488,8 @@
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             const touchX = touch.clientX - rect.left;
-            
             const deltaX = touchX - touchStartX;
+            
             if (Math.abs(deltaX) > 10) {
                 if (deltaX > 0) {
                     leftPlayer.moveRight();
@@ -477,17 +505,14 @@
             touchActive = false;
         });
         
-        // 점수 업데이트
         function updateScore() {
             document.getElementById('leftScore').textContent = gameState.leftScore;
             document.getElementById('rightScore').textContent = gameState.rightScore;
         }
         
-        // 게임 그리기
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 네트 그리기
             ctx.strokeStyle = '#8B4513';
             ctx.lineWidth = 6;
             ctx.beginPath();
@@ -498,7 +523,6 @@
             ctx.fillStyle = '#8B4513';
             ctx.fillRect(canvas.width / 2 - 3, canvas.height - 120, 6, 8);
             
-            // 코트 라인
             ctx.strokeStyle = '#FFF';
             ctx.lineWidth = 3;
             ctx.setLineDash([]);
@@ -513,28 +537,16 @@
             ctx.lineTo(canvas.width / 2, canvas.height - 120);
             ctx.stroke();
             
-            // 게임 오브젝트 그리기
             leftPlayer.draw();
             rightPlayer.draw();
             ball.draw();
         }
         
-        // 게임 업데이트
         function update(deltaTime) {
             if (!gameState.isGameRunning) return;
             
-            // 플레이어 컨트롤 (PC)
-            if (!isMobile) {
-                if (keys['ArrowLeft'] || keys['a'] || keys['A'] || leftPressed) {
-                    leftPlayer.moveLeft();
-                }
-                if (keys['ArrowRight'] || keys['d'] || keys['D'] || rightPressed) {
-                    leftPlayer.moveRight();
-                }
-                if (keys[' '] || keys['w'] || keys['W'] || keys['ArrowUp']) {
-                    leftPlayer.jump();
-                }
-            }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A'] || leftPressed) leftPlayer.moveLeft();
+            if (keys['ArrowRight'] || keys['d'] || keys['D'] || rightPressed) leftPlayer.moveRight();
             
             // AI
             const ballDistance = Math.abs(rightPlayer.x - ball.x);
@@ -550,47 +562,46 @@
                 rightPlayer.jump();
             }
             
-            // 오브젝트 업데이트
             leftPlayer.update(deltaTime);
             rightPlayer.update(deltaTime);
             ball.update(deltaTime);
             
-            // 충돌 체크
             ball.checkPlayerCollision(leftPlayer);
             ball.checkPlayerCollision(rightPlayer);
         }
         
-        // 게임 루프
         function gameLoop(currentTime) {
-            if (lastTime === 0) {
-                lastTime = currentTime;
-            }
-            
-            const deltaTime = (currentTime - lastTime) / 1000;
+            if (lastTime === 0) lastTime = currentTime;
+            const deltaTime = Math.min((currentTime - lastTime) / 1000, 1/60);
             lastTime = currentTime;
             
-            const limitedDeltaTime = Math.min(deltaTime, 1/60);
-            
-            update(limitedDeltaTime);
+            update(deltaTime);
             draw();
             requestAnimationFrame(gameLoop);
         }
         
-        // 캔버스 크기 조정
         function resizeCanvas() {
-            const container = canvas.parentElement;
-            const maxWidth = Math.min(window.innerWidth - 20, 800);
-            const maxHeight = Math.min(window.innerHeight - 100, 400);
+            const isPortrait = window.innerHeight > window.innerWidth;
             
-            canvas.style.width = maxWidth + 'px';
-            canvas.style.height = (maxWidth * 0.5) + 'px';
+            if (isPortrait) {
+                // 세로 모드: 회전된 상태 고려
+                const availHeight = window.innerWidth;
+                const availWidth = window.innerHeight * 0.75;
+                const scale = Math.min(availWidth / 800, availHeight / 400);
+                canvas.style.width = (800 * scale) + 'px';
+                canvas.style.height = (400 * scale) + 'px';
+            } else {
+                // 가로 모드: 화면의 75% 활용
+                const availWidth = window.innerWidth * 0.95;
+                const availHeight = window.innerHeight * 0.75;
+                const scale = Math.min(availWidth / 800, availHeight / 400);
+                canvas.style.width = (800 * scale) + 'px';
+                canvas.style.height = (400 * scale) + 'px';
+            }
         }
         
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        
-        // 게임 시작
         updateScore();
+        canvas.focus();
         requestAnimationFrame(gameLoop);
     </script>
 </body>
