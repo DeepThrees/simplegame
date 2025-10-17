@@ -326,7 +326,7 @@
                 // Premium game check
                 if (game.premium) {
                     if (!checkPaymentStatus(game.gameId)) {
-                        showPaymentModal(index);
+                        window.location.href = `payment.html?game=${game.gameId}&return=index.html`;
                         return;
                     }
                 }
